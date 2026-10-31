@@ -121,6 +121,22 @@ class TestWaitForCi(ActionTestCase):
         # THEN
         self.assert_fails(result)
 
+    def test_reports_github_errors(self):
+        # GIVEN
+        self.given_github(SHA, {"id": 7, "status": "completed", "conclusion": "success", "run_attempt": 1})
+        failing_runs_lookup = 'elif "/runs?" in path:\n    sys.stderr.write("HTTP 404: Not Found\\n")\n    sys.exit(1)'
+        self.given_fake_command("gh", FAKE_GH.replace('elif "/runs?" in path:\n    body = load("runs.json")',
+                                                      failing_runs_lookup))
+
+        # WHEN
+        result = self.wait_for_ci()
+
+        # THEN
+        self.assert_fails(result)
+        self.assertIn("::error::gh api repos/owner/repo/actions/workflows/build.yml/runs", result.stdout)
+        self.assertIn("HTTP 404: Not Found", result.stdout)
+        self.assertNotIn("Traceback", result.stderr)
+
     def test_fails_without_a_push_run(self):
         # GIVEN
         self.given_github(SHA, None)

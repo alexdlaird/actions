@@ -17,8 +17,15 @@ def fail(message: str) -> NoReturn:
     sys.exit(1)
 
 
+def gh(*args: str) -> str:
+    result = subprocess.run(["gh", *args], capture_output=True, text=True)
+    if result.returncode != 0:
+        fail(f"gh {' '.join(args)} failed: {(result.stderr or result.stdout).strip()}")
+    return result.stdout
+
+
 def gh_api(path: str) -> dict:
-    return json.loads(subprocess.run(["gh", "api", path], check=True, capture_output=True, text=True).stdout)
+    return json.loads(gh("api", path))
 
 
 def latest_push_run(repo_slug: str, workflow: str, sha: str, branch: str) -> Optional[dict]:
@@ -56,7 +63,7 @@ def main() -> None:
 
     if latest["status"] == "completed" and latest.get("conclusion") != "success":
         print(f"{workflow} run {run_id} concluded '{latest.get('conclusion')}'; re-running its failed jobs")
-        subprocess.run(["gh", "run", "rerun", str(run_id), "--failed", "--repo", repo_slug], check=True)
+        gh("run", "rerun", str(run_id), "--failed", "--repo", repo_slug)
         for _ in range(SETTLE_ATTEMPTS):
             time.sleep(settle_seconds)
             if gh_api(f"repos/{repo_slug}/actions/runs/{run_id}")["run_attempt"] > latest["run_attempt"]:
