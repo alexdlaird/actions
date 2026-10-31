@@ -1,13 +1,17 @@
 name: 'Wait for CI'
-description: "Wait for the push run of a CI workflow on a branch's commit to succeed, re-running its failed jobs once if it already failed. Fails if the branch moves first."
+description: "Wait for the push run of a CI workflow on a branch's HEAD commit to succeed, re-running its failed jobs once if it already failed. Fails if the branch moves first."
 
 inputs:
   token:
     description: 'Token that can read runs and re-run jobs (actions: write)'
     required: true
   sha:
-    description: "The commit to wait on; must still be develop's HEAD"
+    description: "The commit to wait on; must still be the branch's HEAD"
     required: true
+  branch:
+    description: 'The branch whose push builds the commit'
+    required: false
+    default: 'develop'
   repo-slug:
     description: 'owner/repo'
     required: true
@@ -36,12 +40,13 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Wait for the develop push run to succeed
+    - name: Wait for the push run to succeed
       id: wait
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.token }}
-        DEVELOP_SHA: ${{ inputs.sha }}
+        CI_SHA: ${{ inputs.sha }}
+        CI_BRANCH: ${{ inputs.branch }}
         REPO_SLUG: ${{ inputs.repo-slug }}
         CI_WORKFLOW: ${{ inputs.workflow }}
         CI_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}

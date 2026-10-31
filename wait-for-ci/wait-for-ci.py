@@ -21,33 +21,34 @@ def gh_api(path: str) -> dict:
     return json.loads(subprocess.run(["gh", "api", path], check=True, capture_output=True, text=True).stdout)
 
 
-def latest_push_run(repo_slug: str, workflow: str, sha: str) -> Optional[dict]:
+def latest_push_run(repo_slug: str, workflow: str, sha: str, branch: str) -> Optional[dict]:
     # Only the push run builds the release candidates (a dispatch or PR run for the same SHA may not)
-    runs = gh_api(f"repos/{repo_slug}/actions/workflows/{workflow}/runs?head_sha={sha}&event=push&branch=develop")
+    runs = gh_api(f"repos/{repo_slug}/actions/workflows/{workflow}/runs?head_sha={sha}&event=push&branch={branch}")
     return max(runs["workflow_runs"], key=lambda run: run["id"], default=None)
 
 
 def main() -> None:
     repo_slug = os.environ["REPO_SLUG"]
     workflow = os.environ["CI_WORKFLOW"]
-    sha = os.environ["DEVELOP_SHA"]
+    sha = os.environ["CI_SHA"]
+    branch = os.environ.get("CI_BRANCH", "develop")
     timeout_minutes = int(os.environ["CI_TIMEOUT_MINUTES"])
     poll_seconds = int(os.environ.get("CI_POLL_SECONDS", "30"))
     settle_seconds = int(os.environ.get("CI_SETTLE_SECONDS", "5"))
     deadline = time.time() + timeout_minutes * 60
 
-    current = gh_api(f"repos/{repo_slug}/git/refs/heads/develop")["object"]["sha"]
+    current = gh_api(f"repos/{repo_slug}/git/refs/heads/{branch}")["object"]["sha"]
     if current != sha:
-        fail(f"develop HEAD moved during release (was {sha}, now {current}). Re-run.")
+        fail(f"{branch} HEAD moved during release (was {sha}, now {current}). Re-run.")
 
     latest = None
     for _ in range(SETTLE_ATTEMPTS):
-        latest = latest_push_run(repo_slug, workflow, sha)
+        latest = latest_push_run(repo_slug, workflow, sha, branch)
         if latest:
             break
         time.sleep(settle_seconds)
     if not latest:
-        fail(f"No {workflow} push run for {sha}. Push to develop to build it, then re-run.")
+        fail(f"No {workflow} push run for {sha}. Push to {branch} to build it, then re-run.")
 
     run_id = latest["id"]
     with open(os.environ["GITHUB_OUTPUT"], "a") as f:
@@ -67,7 +68,7 @@ def main() -> None:
         run = gh_api(f"repos/{repo_slug}/actions/runs/{run_id}")
         if run["status"] == "completed":
             if run.get("conclusion") == "success":
-                print(f"{workflow} run {run_id} succeeded on develop HEAD")
+                print(f"{workflow} run {run_id} succeeded on {branch} HEAD")
                 return
             fail(f"{workflow} run {run_id} concluded '{run.get('conclusion') or ''}'")
         print(f"{workflow} run {run_id} status={run['status']} ({int(deadline - time.time())}s remaining)")

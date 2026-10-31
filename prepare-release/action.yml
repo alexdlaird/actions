@@ -3,7 +3,7 @@ description: "Prepare a squash release's notes. With changelog: check the versio
 
 inputs:
   version:
-    description: 'The version being released (develop already carries it); changelog only'
+    description: 'The version being released; changelog only'
     required: false
     default: ''
   version-parts:
@@ -15,9 +15,13 @@ inputs:
     required: false
     default: 'true'
   tested-sha:
-    description: 'The develop commit being released (for commit-subject notes)'
+    description: 'The commit being released (for commit-subject notes)'
     required: false
     default: ''
+  base:
+    description: 'The ref the release is cut onto; commits since it make the notes (for commit-subject notes)'
+    required: false
+    default: 'main'
   repo-slug:
     description: 'GitHub repo slug (e.g. "alexdlaird/pyngrok"), for the changelog compare links; changelog only'
     required: false
@@ -46,4 +50,5 @@ runs:
         REPO_SLUG: ${{ inputs.repo-slug }}
         CHANGELOG: ${{ inputs.changelog }}
         TESTED_SHA: ${{ inputs.tested-sha }}
+        BASE_REF: ${{ inputs.base }}
       run: python3 "${{ github.action_path }}/prepare-release.py"

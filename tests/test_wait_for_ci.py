@@ -32,7 +32,7 @@ if args[:2] == ["run", "rerun"]:
     sys.exit(0)
 
 path = args[1]
-if path.endswith("/git/refs/heads/develop"):
+if "/git/refs/heads/" in path:
     body = load("head.json")
 elif "/runs?" in path:
     body = load("runs.json")
@@ -44,10 +44,10 @@ sys.stdout.write(json.dumps(body))
 
 
 class TestWaitForCi(ActionTestCase):
-    def given_github(self, develop_head, run):
+    def given_github(self, branch_head, run):
         self.fake_state = tempfile.mkdtemp()
         with open(os.path.join(self.fake_state, "head.json"), "w") as f:
-            json.dump({"object": {"sha": develop_head}}, f)
+            json.dump({"object": {"sha": branch_head}}, f)
         with open(os.path.join(self.fake_state, "runs.json"), "w") as f:
             json.dump({"workflow_runs": [run] if run else []}, f)
         with open(os.path.join(self.fake_state, "run.json"), "w") as f:
@@ -59,8 +59,8 @@ class TestWaitForCi(ActionTestCase):
         with open(os.path.join(self.fake_state, "calls")) as f:
             return f.read()
 
-    def wait_for_ci(self):
-        return self.run_action("wait-for-ci", GH_TOKEN="token", DEVELOP_SHA=SHA, REPO_SLUG="owner/repo",
+    def wait_for_ci(self, branch="develop"):
+        return self.run_action("wait-for-ci", GH_TOKEN="token", CI_SHA=SHA, CI_BRANCH=branch, REPO_SLUG="owner/repo",
                                CI_WORKFLOW="build.yml", CI_TIMEOUT_MINUTES="1", CI_POLL_SECONDS="0",
                                CI_SETTLE_SECONDS="0", FAKE_STATE=self.fake_state)
 
@@ -74,7 +74,19 @@ class TestWaitForCi(ActionTestCase):
         # THEN
         self.assert_succeeds(result)
         self.assertEqual("7", self.outputs()["run_id"])
-        self.assertIn("event=push&branch=develop", self.calls(), "only develop push runs count")
+        self.assertIn("event=push&branch=develop", self.calls(), "only push runs on the branch count")
+
+    def test_waits_on_another_branch(self):
+        # GIVEN
+        self.given_github(SHA, {"id": 7, "status": "completed", "conclusion": "success", "run_attempt": 1})
+
+        # WHEN
+        result = self.wait_for_ci(branch="main")
+
+        # THEN
+        self.assert_succeeds(result)
+        self.assertIn("refs/heads/main", self.calls())
+        self.assertIn("event=push&branch=main", self.calls())
 
     def test_reruns_failed_jobs_then_waits(self):
         # GIVEN
@@ -99,7 +111,7 @@ class TestWaitForCi(ActionTestCase):
         # THEN
         self.assert_fails(result)
 
-    def test_fails_when_develop_moved(self):
+    def test_fails_when_the_branch_moved(self):
         # GIVEN
         self.given_github("def456", {"id": 7, "status": "completed", "conclusion": "success", "run_attempt": 1})
 

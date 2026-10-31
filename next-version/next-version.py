@@ -73,11 +73,11 @@ def main() -> None:
     new = new_file_version.rsplit(".", 1)[0] if two_part else new_file_version
 
     if version_key(current_file_version) >= version_key(new_file_version):
-        print(f"develop is already at {current} ({bump_type} from {last_tag} is {new}); nothing to bump")
+        print(f"The version is already {current} ({bump_type} from {last_tag} is {new}); nothing to bump")
         write_outputs(changed="false", version=current)
         return
 
-    print(f"Bumping develop from {current} to {new} ({bump_type} from {last_tag})")
+    print(f"Bumping the version from {current} to {new} ({bump_type} from {last_tag})")
     write_outputs(changed="true", current=current, version=new, file_version=new_file_version)
 
 

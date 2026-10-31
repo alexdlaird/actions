@@ -5,7 +5,7 @@ set -eo pipefail
 
 RELEASED=$(git tag --list "${VERSION}" "${VERSION}+*")
 if [ -n "$RELEASED" ]; then
-  echo "::error::${VERSION} is already released (${RELEASED}), so develop's version was not bumped after it. Run the Bump Version workflow, then re-run."
+  echo "::error::${VERSION} is already released (${RELEASED}), so bump the version before releasing."
   exit 1
 fi
-echo "Releasing ${VERSION} from develop"
+echo "${VERSION} is unreleased"

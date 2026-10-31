@@ -30,11 +30,11 @@ def write_outputs(release_notes: str, **outputs: str) -> None:
         f.write(f"release_notes<<{delimiter}\n{release_notes}\n{delimiter}\n")
 
 
-def commit_notes(tested_sha: str) -> str:
+def commit_notes(base: str, tested_sha: str) -> str:
     """
     The released commits' subjects, leaving out version bumps.
     """
-    log = subprocess.run(["git", "log", "--pretty=format:- %s", f"main..{tested_sha}"], check=True,
+    log = subprocess.run(["git", "log", "--pretty=format:- %s", f"{base}..{tested_sha}"], check=True,
                          capture_output=True, text=True).stdout
     subjects = [line for line in log.splitlines() if not line.startswith("- Bump version to ")]
     return "\n".join(subjects) or "- (no commits found)"
@@ -60,8 +60,8 @@ def bump_type(old_version: Optional[str], new_version: str) -> str:
         return "minor"
     if new_major == old_major and new_minor == old_minor and new_patch > old_patch:
         return "patch"
-    fail(f"Version {new_version} does not follow {old_version} (the CHANGELOG's last release). Fix develop's "
-         f"version with the Bump Version workflow.")
+    fail(f"Version {new_version} does not follow {old_version} (the CHANGELOG's last release). Set the version "
+         f"to the next patch, minor, or major.")
 
 
 def trim_blank_lines(text: str) -> str:
@@ -135,7 +135,7 @@ def release_changelog(new_version: str, two_part: bool, repo_slug: str) -> Tuple
 
 def main() -> None:
     if os.environ["CHANGELOG"] != "true":
-        write_outputs(commit_notes(os.environ["TESTED_SHA"]))
+        write_outputs(commit_notes(os.environ.get("BASE_REF", "main"), os.environ["TESTED_SHA"]))
         return
 
     new_version = os.environ["NEW_VERSION"]

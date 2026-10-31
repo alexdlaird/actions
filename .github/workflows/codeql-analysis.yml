@@ -4,9 +4,9 @@ run-name: CodeQL ${{ github.ref_name }}
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ main ]
   pull_request:
-    branches: [ develop ]
+    branches: [ main ]
 
 jobs:
   codeql:

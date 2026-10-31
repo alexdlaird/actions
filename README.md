@@ -1,16 +1,16 @@
-# actions
+# Release and iOS Build Actions
 
 [![Version](https://img.shields.io/github/v/release/alexdlaird/actions)](https://github.com/alexdlaird/actions/releases)
 [![Build](https://img.shields.io/github/actions/workflow/status/alexdlaird/actions/build.yml)](https://github.com/alexdlaird/actions/actions/workflows/build.yml)
 [![GitHub License](https://img.shields.io/github/license/alexdlaird/actions)](https://github.com/alexdlaird/actions/blob/main/LICENSE)
 
-`actions` is a set of composite GitHub Actions for releasing software the same way across many repos, and for
-building iOS apps on self-hosted Macs. Each action is a small, tested script behind an `action.yml`, so a workflow
-stays wiring while the logic can be read, linted, and tested on its own.
+Ship exactly what you tested. These composite GitHub Actions are the steps of a release process where the version
+lives in the repo, a release goes out only from the commit CI already built and tested, and release notes come
+straight from your changelog. Each one is small and tested on its own, so you can use the whole set or just the piece
+your workflow is missing.
 
-They back the shared release workflows in [`alexdlaird/.github`](https://github.com/alexdlaird/.github): a release
-squashes `develop` into `main`, ships the artifacts CI already built and tested for that exact commit, then bumps
-`develop` to the next version.
+Alongside them are a few helpers for building iOS apps on self-hosted Macs, where several repos often share one
+machine.
 
 ## Installation
 
@@ -60,17 +60,18 @@ a minor chosen ahead of a release, is never lowered.
   with:
     version: ${{ steps.current.outputs.version }}
 
-- name: Verify main gets develop's tested code
+- name: Verify the code about to ship is the tested commit's
   uses: alexdlaird/actions/verify-tree@v1
   with:
-    tested-sha: ${{ env.DEVELOP_SHA }}
+    tested-sha: ${{ github.sha }}
 
-- name: Wait for the develop push run to succeed
+- name: Wait for the push run to succeed
   id: ci
   uses: alexdlaird/actions/wait-for-ci@v1
   with:
     token: ${{ steps.app-token.outputs.token }}
-    sha: ${{ env.DEVELOP_SHA }}
+    sha: ${{ github.sha }}
+    branch: develop
     repo-slug: ${{ github.repository }}
 ```
 
@@ -125,7 +126,8 @@ onto HTTP/1.1 and retries transient CDN errors.
 
 ## Documentation
 
-Each action's inputs and outputs are documented in its `action.yml`.
+Each action's inputs and outputs are documented in its `action.yml`. For complete workflows built from them, see
+the reusable release workflows in [`alexdlaird/.github`](https://github.com/alexdlaird/.github).
 
 | Action | Does |
 |---|---|

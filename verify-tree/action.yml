@@ -6,7 +6,7 @@ inputs:
     description: 'The commit CI tested'
     required: true
   commit:
-    description: 'The commit to check (fetched from origin main if missing); empty checks the working tree, untracked files included'
+    description: 'The commit to check (fetched from origin if missing); empty checks the working tree, untracked files included'
     required: false
     default: ''
   changelog:

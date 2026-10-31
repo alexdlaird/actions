@@ -1,4 +1,4 @@
-.PHONY: all install check test validate-release
+.PHONY: all install check test
 
 SHELL := /usr/bin/env bash
 PYTHON_BIN ?= python3
@@ -23,8 +23,3 @@ check: install
 
 test:
 	$(PYTHON_BIN) -m unittest discover -s tests -t . -v
-
-validate-release:
-	@if [[ "${VERSION}" == "" ]]; then echo "VERSION is not set" & exit 1 ; fi
-
-	@if [[ $$(cat VERSION) != "${VERSION}" ]] ; then echo "Version not bumped in VERSION" & exit 1 ; fi
