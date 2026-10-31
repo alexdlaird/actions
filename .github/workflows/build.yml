@@ -1,0 +1,51 @@
+name: Build
+
+run-name: Build ${{ github.ref_name }}
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+  issues: none
+  pull-requests: none
+
+jobs:
+  build:
+    name: Build
+
+    env:
+      FORCE_COLOR: 1
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+
+    # The scripts run on the system python3 of whatever runs the action, down to the 3.9 of a self-hosted Mac
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+        python-version: [ "3.13" ]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.9"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install shellcheck
+        if: runner.os == 'macOS'
+        run: brew install shellcheck
+      - name: Check
+        run: make check
+      - name: Test
+        run: make test

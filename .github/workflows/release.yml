@@ -1,0 +1,80 @@
+name: Release
+
+run-name: Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prereq:
+    uses: alexdlaird/.github/.github/workflows/release-prereq.yml@main
+    with:
+      version_file: VERSION
+      version_pattern: 's/^[0-9.]*$/${VERSION}/'
+      repo_slug: alexdlaird/actions
+      changelog: true
+    secrets:
+      bot_app_id: ${{ secrets.RELEASE_BOT_APP_ID }}
+      bot_private_key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+  release:
+    needs: [prereq]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.prereq.outputs.squash_commit_sha }}
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ needs.prereq.outputs.version }}
+          SHA: ${{ needs.prereq.outputs.squash_commit_sha }}
+          RELEASE_NOTES: ${{ needs.prereq.outputs.release_notes }}
+        run: |
+          gh release create "$VERSION" \
+            --target "$SHA" \
+            --title "$VERSION" \
+            --notes "$RELEASE_NOTES"
+
+      # Callers pin the major tag (`@v1`), so it moves to every release of that major
+      - name: Move the major version tag
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ needs.prereq.outputs.version }}
+          SHA: ${{ needs.prereq.outputs.squash_commit_sha }}
+        run: |
+          MAJOR_TAG="v${VERSION%%.*}"
+          if gh api "repos/${GITHUB_REPOSITORY}/git/refs/tags/${MAJOR_TAG}" > /dev/null 2>&1; then
+            gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/${MAJOR_TAG}" -f sha="$SHA" -F force=true > /dev/null
+          else
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/git/refs" -f ref="refs/tags/${MAJOR_TAG}" -f sha="$SHA" > /dev/null
+          fi
+          echo "${MAJOR_TAG} -> ${SHA}"
+
+  cleanup:
+    needs: [prereq, release]
+    if: always() && needs.prereq.result == 'success'
+    uses: alexdlaird/.github/.github/workflows/release-cleanup.yml@main
+    secrets:
+      bot_app_id: ${{ secrets.RELEASE_BOT_APP_ID }}
+      bot_private_key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+
+  bump:
+    needs: [release, cleanup]
+    if: always() && needs.release.result == 'success'
+    uses: ./.github/workflows/bump-version.yml
+    with:
+      bump_type: next
+    secrets: inherit

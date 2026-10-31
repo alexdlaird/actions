@@ -1,0 +1,16 @@
+name: 'Security Versions'
+description: "Point SECURITY.md's supported-versions table at a new minor (when the table lists versions as X.Y.x and doesn't have that minor yet)."
+
+inputs:
+  version:
+    description: 'The new version (X.Y.Z)'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Rewrite SECURITY.md's supported versions
+      shell: bash
+      env:
+        NEW_VERSION: ${{ inputs.version }}
+      run: python3 "${{ github.action_path }}/security-versions.py"

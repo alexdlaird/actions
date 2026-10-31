@@ -1,0 +1,26 @@
+name: 'iOS Deploy Lock'
+description: "Take or release a machine-wide lock so iOS deploys on a shared self-hosted Mac take turns (they share the keychain search list, ~/.appstoreconnect and the provisioning profiles folder). Take it first, release it in an always() step."
+
+inputs:
+  mode:
+    description: 'acquire or release'
+    required: true
+  lock-path:
+    description: 'Lock directory shared by every repo deploying on the machine'
+    required: false
+    default: '~/.ios-deploy.lock'
+  stale-minutes:
+    description: "A lock older than this is broken (no job may run longer)"
+    required: false
+    default: '110'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: ${{ inputs.mode == 'acquire' && 'Wait for the iOS deploy lock' || 'Release the iOS deploy lock' }}
+      shell: bash
+      env:
+        MODE: ${{ inputs.mode }}
+        LOCK_PATH: ${{ inputs.lock-path }}
+        STALE_MINUTES: ${{ inputs.stale-minutes }}
+      run: "${{ github.action_path }}/ios-deploy-lock.sh"

@@ -1,0 +1,9 @@
+name: 'Select Xcode'
+description: 'Select the newest stable Xcode installed in /Applications (skipping betas and release candidates).'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Select latest stable Xcode
+      shell: bash
+      run: "${{ github.action_path }}/select-xcode.sh"
