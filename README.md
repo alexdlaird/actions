@@ -78,6 +78,23 @@ a minor chosen ahead of a release, is never lowered.
 [`wait-for-ci`](https://github.com/alexdlaird/shipshape/blob/main/wait-for-ci/action.yml) outputs the `run-id` that
 tested the commit, whose artifacts are what the release ships.
 
+### Deploy as Its Own Run
+
+[`run-workflow`](https://github.com/alexdlaird/shipshape/blob/main/run-workflow/action.yml) starts a workflow and waits
+for that exact run, so a release can hand off to a `deploy.yml` that keeps its own history, and still fail if the
+deploy does.
+
+```yaml
+- name: Deploy
+  uses: alexdlaird/shipshape/run-workflow@v1
+  with:
+    workflow: deploy.yml
+    ref: develop
+    token: ${{ github.token }}
+    inputs: |
+      version=${{ needs.prereq.outputs.version }}
+```
+
 ### Release Notes and the Changelog
 
 [`prepare-release`](https://github.com/alexdlaird/shipshape/blob/main/prepare-release/action.yml) moves a
@@ -137,6 +154,7 @@ and [Helium](https://github.com/HeliumEdu/frontend/blob/main/.github/workflows/r
 | [`next-version`](https://github.com/alexdlaird/shipshape/blob/main/next-version/action.yml) | Compute the next version from the last release tag |
 | [`check-unreleased`](https://github.com/alexdlaird/shipshape/blob/main/check-unreleased/action.yml) | Fail if a version is already tagged |
 | [`verify-tree`](https://github.com/alexdlaird/shipshape/blob/main/verify-tree/action.yml) | Fail unless the code about to ship is the tested commit's |
+| [`run-workflow`](https://github.com/alexdlaird/shipshape/blob/main/run-workflow/action.yml) | Run a workflow and wait for that run, failing if it fails |
 | [`wait-for-ci`](https://github.com/alexdlaird/shipshape/blob/main/wait-for-ci/action.yml) | Wait for a commit's CI push run, re-running failed jobs once |
 | [`prepare-release`](https://github.com/alexdlaird/shipshape/blob/main/prepare-release/action.yml) | Release notes, from `CHANGELOG.md` or commit subjects |
 | [`security-versions`](https://github.com/alexdlaird/shipshape/blob/main/security-versions/action.yml) | Point `SECURITY.md` at a new minor |

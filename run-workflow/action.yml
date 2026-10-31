@@ -1,0 +1,53 @@
+name: 'Run Workflow'
+description: "Start a workflow_dispatch workflow with inputs and wait for that run to finish, failing if it fails. The run keeps its own history (a Release that runs Deploy this way leaves a Deploy run to follow), and it is always the run this started."
+
+inputs:
+  workflow:
+    description: 'The workflow file to run (e.g. deploy.yml)'
+    required: true
+  ref:
+    description: 'The branch or tag to run it on'
+    required: true
+  inputs:
+    description: "The workflow's inputs, one name=value per line"
+    required: false
+    default: ''
+  token:
+    description: 'Token that can start workflows (actions: write)'
+    required: true
+  repo-slug:
+    description: 'owner/repo'
+    required: false
+    default: ${{ github.repository }}
+  timeout-minutes:
+    description: 'How long to wait for the run to finish'
+    required: false
+    default: '120'
+  poll-seconds:
+    description: 'How often to check the run'
+    required: false
+    default: '30'
+
+outputs:
+  run-id:
+    description: 'The run this started'
+    value: ${{ steps.run.outputs.run_id }}
+  run-url:
+    description: "The run's page"
+    value: ${{ steps.run.outputs.run_url }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run and wait for the workflow
+      id: run
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        WORKFLOW: ${{ inputs.workflow }}
+        REF: ${{ inputs.ref }}
+        INPUTS: ${{ inputs.inputs }}
+        REPO_SLUG: ${{ inputs.repo-slug }}
+        TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+        POLL_SECONDS: ${{ inputs.poll-seconds }}
+      run: python3 "${{ github.action_path }}/run-workflow.py"
