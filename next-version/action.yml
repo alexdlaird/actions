@@ -1,0 +1,44 @@
+name: 'Next Version'
+description: "Compute a repo's next version from its last release tag (git tags in the working directory): next, patch, minor, or major, never lower than the version already set."
+
+inputs:
+  bump-type:
+    description: 'next (patch, or minor for two-part versions), patch, minor, or major'
+    required: true
+  version-parts:
+    description: '3 for X.Y.Z; 2 for X.Y (written as X.Y.0)'
+    required: false
+    default: '3'
+  current:
+    description: 'The version set now (X.Y.Z, or X.Y for two-part versions)'
+    required: true
+  current-file-version:
+    description: 'The version set now, as written in the file (X.Y.Z)'
+    required: true
+
+outputs:
+  changed:
+    description: "'true' when the version should change"
+    value: ${{ steps.compute.outputs.changed }}
+  current:
+    description: 'The version set before the bump (when changed)'
+    value: ${{ steps.compute.outputs.current }}
+  version:
+    description: 'The next version (X.Y.Z, or X.Y), or the current one when unchanged'
+    value: ${{ steps.compute.outputs.version }}
+  file-version:
+    description: 'The next version as written in the file (X.Y.Z; when changed)'
+    value: ${{ steps.compute.outputs.file_version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Compute next version
+      id: compute
+      shell: bash
+      env:
+        BUMP_TYPE: ${{ inputs.bump-type }}
+        VERSION_PARTS: ${{ inputs.version-parts }}
+        CURRENT: ${{ inputs.current }}
+        CURRENT_FILE_VERSION: ${{ inputs.current-file-version }}
+      run: python3 "${{ github.action_path }}/next-version.py"

@@ -1,0 +1,16 @@
+name: 'Check Unreleased'
+description: "Fail if a version is already released: tagged as X.Y.Z, or as X.Y.Z+N by a release that also stamped a build number (git tags in the working directory)."
+
+inputs:
+  version:
+    description: 'The version about to be released'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Pre-validate version is unreleased
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: "${{ github.action_path }}/check-unreleased.sh"

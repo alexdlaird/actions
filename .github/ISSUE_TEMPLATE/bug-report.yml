@@ -1,0 +1,61 @@
+name: 🐛 Bug Report
+description: Found a bug? Help us squash it.
+labels: ["bug"]
+
+body:
+
+- type: markdown
+  attributes:
+    value: |
+      Consider [supporting the project](https://github.com/sponsors/alexdlaird) ❤ to have your request prioritized.
+
+- type: checkboxes
+  id: ack
+  attributes:
+    label: Acknowledgements
+    options:
+    - label: I have written a descriptive issue title
+      required: true
+    - label: I have read the action's inputs and outputs in [the README](https://github.com/alexdlaird/shipshape#readme)
+      required: true
+    - label: I have searched [Issues](issues?q=is%3Aissue) to see if the bug has already been reported
+      required: true
+
+- type: input
+  id: action
+  attributes:
+    label: Action and Version
+    placeholder: alexdlaird/shipshape/next-version@v1
+  validations:
+    required: true
+
+- type: input
+  id: runner
+  attributes:
+    label: Runner
+    placeholder: ubuntu-latest
+  validations:
+    required: true
+
+- type: textarea
+  id: describe-the-bug
+  attributes:
+    label: Describe the Bug
+    description: A clear and concise description of what the bug is, including the error the step logged.
+  validations:
+    required: true
+
+- type: textarea
+  id: steps-to-reproduce
+  attributes:
+    label: Steps to Reproduce
+    description: The workflow step that uses the action, with its inputs, and anything about the repo it runs against (tags, version file) that matters.
+    render: yaml
+  validations:
+    required: true
+
+- type: textarea
+  id: expected-behavior
+  attributes:
+    label: Expected Behavior
+    description: A brief description of what you expected to happen.

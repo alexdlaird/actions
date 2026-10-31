@@ -1,0 +1,39 @@
+name: 'Read Version'
+description: "Read a repo's version from its version file, using the same sed expression that writes it."
+
+inputs:
+  version-file:
+    description: 'Path to the file containing the version'
+    required: true
+  version-pattern:
+    description: 'The sed substitution that writes the version (e.g. s/^__version__ = ".*"/__version__ = "${VERSION}"/); its match part finds the line to read'
+    required: true
+  version-parts:
+    description: '3 for X.Y.Z; 2 for X.Y, where the file holds X.Y.0'
+    required: false
+    default: '3'
+  ref:
+    description: 'Commit to read the file from; empty reads the working tree'
+    required: false
+    default: ''
+
+outputs:
+  version:
+    description: 'The version (X.Y.Z, or X.Y for two-part versions)'
+    value: ${{ steps.read.outputs.version }}
+  file-version:
+    description: 'The version as written in the file (always X.Y.Z)'
+    value: ${{ steps.read.outputs.file_version }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Read version
+      id: read
+      shell: bash
+      env:
+        VERSION_FILE: ${{ inputs.version-file }}
+        VERSION_PATTERN: ${{ inputs.version-pattern }}
+        VERSION_PARTS: ${{ inputs.version-parts }}
+        REF: ${{ inputs.ref }}
+      run: "${{ github.action_path }}/read-version.sh"

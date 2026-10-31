@@ -1,0 +1,26 @@
+name: 'Verify Tree'
+description: "Fail unless the code about to ship is exactly the tested commit's: the working tree (before committing) or a pushed commit. With changelog, CHANGELOG.md is the one file allowed to differ."
+
+inputs:
+  tested-sha:
+    description: 'The commit CI tested'
+    required: true
+  commit:
+    description: 'The commit to check (fetched from origin if missing); empty checks the working tree, untracked files included'
+    required: false
+    default: ''
+  changelog:
+    description: "'true' when the release rewrites CHANGELOG.md"
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Verify against the tested commit
+      shell: bash
+      env:
+        TESTED_SHA: ${{ inputs.tested-sha }}
+        COMMIT: ${{ inputs.commit }}
+        CHANGELOG: ${{ inputs.changelog }}
+      run: "${{ github.action_path }}/verify-tree.sh"

@@ -1,0 +1,23 @@
+name: 'Pod Install'
+description: "Run pod install for a Flutter iOS app, working around the CocoaPods spec CDN dropping multiplexed HTTP/2 fetches and retrying transient CDN errors."
+
+inputs:
+  ios-directory:
+    description: 'The iOS project directory'
+    required: false
+    default: 'ios'
+  attempts:
+    description: 'How many times to try pod install'
+    required: false
+    default: '3'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install pods
+      shell: bash
+      env:
+        IOS_DIRECTORY: ${{ inputs.ios-directory }}
+        ATTEMPTS: ${{ inputs.attempts }}
+        SHIM: ${{ github.action_path }}/cocoapods_http11.rb
+      run: "${{ github.action_path }}/pod-install.sh"

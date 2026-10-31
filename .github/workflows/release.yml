@@ -1,0 +1,90 @@
+name: Release
+
+run-name: Release
+
+# Tags main's HEAD with the version in VERSION and publishes the CHANGELOG's section for it as the GitHub Release,
+# then moves the major tag (`v1`) callers pin. Only git and gh run here, never this repo's own actions, so a release
+# never depends on the version it replaces.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: release
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(tr -d '[:space:]' < VERSION)
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::VERSION holds '${VERSION}', not X.Y.Z"
+            exit 1
+          fi
+          if [ -n "$(git tag --list "$VERSION")" ]; then
+            echo "::error::${VERSION} is already released; bump VERSION and add its CHANGELOG section first"
+            exit 1
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Verify main's Build passed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: |
+          CONCLUSION=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow build.yml --commit "$SHA" --event push \
+            --limit 1 --json conclusion --jq '.[0].conclusion // ""')
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::Build for ${SHA:0:7} is '${CONCLUSION:-missing}'; release once it passes"
+            exit 1
+          fi
+
+      - name: Read release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          awk -v header="## [${VERSION}]" '
+            index($0, header) == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md | sed '/./,$!d' > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::CHANGELOG.md has no entries under '## [${VERSION}]'"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: |
+          gh release create "$VERSION" \
+            --target "$SHA" \
+            --title "$VERSION" \
+            --notes-file release-notes.md
+
+      # Callers pin the major tag, so it moves to every release of that major
+      - name: Move the major version tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ steps.version.outputs.sha }}
+        run: |
+          MAJOR_TAG="v${VERSION%%.*}"
+          git tag -f "$MAJOR_TAG" "$SHA"
+          git push -f origin "refs/tags/${MAJOR_TAG}"
+          echo "${MAJOR_TAG} -> ${SHA:0:7}"

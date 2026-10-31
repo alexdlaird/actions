@@ -1,0 +1,55 @@
+name: 'Wait for CI'
+description: "Wait for the push run of a CI workflow on a branch's HEAD commit to succeed, re-running its failed jobs once if it already failed. Fails if the branch moves first."
+
+inputs:
+  token:
+    description: 'Token that can read runs and re-run jobs (actions: write)'
+    required: true
+  sha:
+    description: "The commit to wait on; must still be the branch's HEAD"
+    required: true
+  branch:
+    description: 'The branch whose push builds the commit'
+    required: false
+    default: 'develop'
+  repo-slug:
+    description: 'owner/repo'
+    required: true
+  workflow:
+    description: 'The CI workflow file'
+    required: false
+    default: 'build.yml'
+  timeout-minutes:
+    description: 'How long to wait for the run to finish'
+    required: false
+    default: '60'
+  poll-seconds:
+    description: 'How often to check the run once it has started'
+    required: false
+    default: '30'
+  settle-seconds:
+    description: 'How often to look for the run to register, or for a re-run to start'
+    required: false
+    default: '5'
+
+outputs:
+  run-id:
+    description: "The run that tested the commit; its artifacts are the commit's build"
+    value: ${{ steps.wait.outputs.run_id }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Wait for the push run to succeed
+      id: wait
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        CI_SHA: ${{ inputs.sha }}
+        CI_BRANCH: ${{ inputs.branch }}
+        REPO_SLUG: ${{ inputs.repo-slug }}
+        CI_WORKFLOW: ${{ inputs.workflow }}
+        CI_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+        CI_POLL_SECONDS: ${{ inputs.poll-seconds }}
+        CI_SETTLE_SECONDS: ${{ inputs.settle-seconds }}
+      run: python3 "${{ github.action_path }}/wait-for-ci.py"
