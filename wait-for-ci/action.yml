@@ -1,9 +1,9 @@
 name: 'Wait for CI'
-description: "Wait for the push run of a CI workflow on a branch's HEAD commit to succeed, re-running its failed jobs once if it already failed. Fails if the branch moves first."
+description: "Wait for the push run of a CI workflow on a branch's HEAD commit to succeed, re-running its failed jobs once if it already failed, or starting a fresh run if the push never started one. Fails if the branch moves first."
 
 inputs:
   token:
-    description: 'Token that can read runs and re-run jobs (actions: write)'
+    description: 'Token that can read runs, re-run jobs, and start workflows (actions: write)'
     required: true
   sha:
     description: "The commit to wait on; must still be the branch's HEAD"
@@ -31,6 +31,10 @@ inputs:
     description: 'How often to look for the run to register, or for a re-run to start'
     required: false
     default: '5'
+  dispatch-inputs:
+    description: "The workflow's inputs, one name=value per line, if it has to start a fresh run"
+    required: false
+    default: ''
 
 outputs:
   run-id:
@@ -52,4 +56,5 @@ runs:
         CI_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
         CI_POLL_SECONDS: ${{ inputs.poll-seconds }}
         CI_SETTLE_SECONDS: ${{ inputs.settle-seconds }}
+        CI_DISPATCH_INPUTS: ${{ inputs.dispatch-inputs }}
       run: python3 "${{ github.action_path }}/wait-for-ci.py"

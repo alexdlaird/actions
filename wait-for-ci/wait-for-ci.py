@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 import time
-from typing import NoReturn, Optional
+from typing import Dict, NoReturn, Optional
 
 # Waits for a run to register, or for a re-run to start, take this many settle intervals at most
 SETTLE_ATTEMPTS = 12
@@ -17,8 +17,8 @@ def fail(message: str) -> NoReturn:
     sys.exit(1)
 
 
-def gh(*args: str) -> str:
-    result = subprocess.run(["gh", *args], capture_output=True, text=True)
+def gh(*args: str, stdin: str = "") -> str:
+    result = subprocess.run(["gh", *args], input=stdin, capture_output=True, text=True)
     if result.returncode != 0:
         fail(f"gh {' '.join(args)} failed: {(result.stderr or result.stdout).strip()}")
     return result.stdout
@@ -34,6 +34,38 @@ def latest_push_run(repo_slug: str, workflow: str, sha: str, branch: str) -> Opt
     return max(runs["workflow_runs"], key=lambda run: run["id"], default=None)
 
 
+def parse_inputs(text: str) -> Dict[str, str]:
+    """
+    The workflow's inputs, one ``name=value`` per line.
+    """
+    inputs = {}
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        if "=" not in line:
+            fail(f"Input '{line}' isn't name=value")
+        name, value = line.split("=", 1)
+        inputs[name.strip()] = value.strip()
+    return inputs
+
+
+def dispatch_run(repo_slug: str, workflow: str, sha: str, branch: str, inputs: Dict[str, str]) -> dict:
+    """
+    Start a fresh run of ``workflow`` on ``branch`` and return it, failing if it isn't building ``sha``.
+    """
+    body = {"ref": branch, "inputs": inputs, "return_run_details": True}
+    started = json.loads(gh("api", "-X", "POST", f"repos/{repo_slug}/actions/workflows/{workflow}/dispatches",
+                            "--input", "-", stdin=json.dumps(body)) or "{}")
+    run_id = started.get("workflow_run_id")
+    if not run_id:
+        fail(f"GitHub started {workflow} but returned no run to follow")
+
+    run = gh_api(f"repos/{repo_slug}/actions/runs/{run_id}")
+    if run["head_sha"] != sha:
+        fail(f"{branch} HEAD moved during release (was {sha}, run {run_id} built {run['head_sha']}). Re-run.")
+    return run
+
+
 def main() -> None:
     repo_slug = os.environ["REPO_SLUG"]
     workflow = os.environ["CI_WORKFLOW"]
@@ -42,6 +74,7 @@ def main() -> None:
     timeout_minutes = int(os.environ["CI_TIMEOUT_MINUTES"])
     poll_seconds = int(os.environ.get("CI_POLL_SECONDS", "30"))
     settle_seconds = int(os.environ.get("CI_SETTLE_SECONDS", "5"))
+    dispatch_inputs = parse_inputs(os.environ.get("CI_DISPATCH_INPUTS", ""))
     deadline = time.time() + timeout_minutes * 60
 
     current = gh_api(f"repos/{repo_slug}/git/refs/heads/{branch}")["object"]["sha"]
@@ -54,8 +87,10 @@ def main() -> None:
         if latest:
             break
         time.sleep(settle_seconds)
+
     if not latest:
-        fail(f"No {workflow} push run for {sha}. Push to {branch} to build it, then re-run.")
+        latest = dispatch_run(repo_slug, workflow, sha, branch, dispatch_inputs)
+        print(f"No {workflow} push run for {sha}; started run {latest['id']} on {branch}")
 
     run_id = latest["id"]
     with open(os.environ["GITHUB_OUTPUT"], "a") as f:

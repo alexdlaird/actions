@@ -76,7 +76,8 @@ a minor chosen ahead of a release, is never lowered.
 ```
 
 [`wait-for-ci`](https://github.com/alexdlaird/shipshape/blob/main/wait-for-ci/action.yml) outputs the `run-id` that
-tested the commit, whose artifacts are what the release ships.
+tested the commit, whose artifacts are what the release ships. If the push never started a run, it starts a fresh one
+on the branch (with `dispatch-inputs`, one `name=value` per line) and waits on that instead.
 
 ### Deploy as Its Own Run
 
@@ -155,7 +156,7 @@ and [Helium](https://github.com/HeliumEdu/frontend/blob/main/.github/workflows/r
 | [`check-unreleased`](https://github.com/alexdlaird/shipshape/blob/main/check-unreleased/action.yml) | Fail if a version is already tagged |
 | [`verify-tree`](https://github.com/alexdlaird/shipshape/blob/main/verify-tree/action.yml) | Fail unless the code about to ship is the tested commit's |
 | [`run-workflow`](https://github.com/alexdlaird/shipshape/blob/main/run-workflow/action.yml) | Run a workflow and wait for that run, failing if it fails |
-| [`wait-for-ci`](https://github.com/alexdlaird/shipshape/blob/main/wait-for-ci/action.yml) | Wait for a commit's CI push run, re-running failed jobs once |
+| [`wait-for-ci`](https://github.com/alexdlaird/shipshape/blob/main/wait-for-ci/action.yml) | Wait for a commit's CI push run, re-running failed jobs once or starting one if missing |
 | [`prepare-release`](https://github.com/alexdlaird/shipshape/blob/main/prepare-release/action.yml) | Release notes, from `CHANGELOG.md` or commit subjects |
 | [`security-versions`](https://github.com/alexdlaird/shipshape/blob/main/security-versions/action.yml) | Point `SECURITY.md` at a new minor |
 | [`ios-deploy-lock`](https://github.com/alexdlaird/shipshape/blob/main/ios-deploy-lock/action.yml) | Take turns deploying iOS apps on a shared Mac |

@@ -31,6 +31,14 @@ if args[:2] == ["run", "rerun"]:
         json.dump(run, f)
     sys.exit(0)
 
+if "-X" in args and "POST" in args:
+    with open(os.path.join(state, "dispatch_body.json"), "w") as f:
+        f.write(sys.stdin.read())
+    with open(os.path.join(state, "run.json"), "w") as f:
+        json.dump(load("dispatched.json"), f)
+    sys.stdout.write(json.dumps({"workflow_run_id": load("dispatched.json")["id"]}))
+    sys.exit(0)
+
 path = args[1]
 if "/git/refs/heads/" in path:
     body = load("head.json")
@@ -44,8 +52,10 @@ sys.stdout.write(json.dumps(body))
 
 
 class TestWaitForCi(ActionTestCase):
-    def given_github(self, branch_head, run):
+    def given_github(self, branch_head, run, dispatched=None):
         self.fake_state = tempfile.mkdtemp()
+        with open(os.path.join(self.fake_state, "dispatched.json"), "w") as f:
+            json.dump(dispatched or {}, f)
         with open(os.path.join(self.fake_state, "head.json"), "w") as f:
             json.dump({"object": {"sha": branch_head}}, f)
         with open(os.path.join(self.fake_state, "runs.json"), "w") as f:
@@ -55,14 +65,18 @@ class TestWaitForCi(ActionTestCase):
         self.given_fake_command("gh", FAKE_GH)
         self.given_fake_command("sleep", "#!/usr/bin/env bash\nexit 0\n")
 
+    def dispatch_body(self):
+        with open(os.path.join(self.fake_state, "dispatch_body.json")) as f:
+            return json.load(f)
+
     def calls(self):
         with open(os.path.join(self.fake_state, "calls")) as f:
             return f.read()
 
-    def wait_for_ci(self, branch="develop"):
+    def wait_for_ci(self, branch="develop", dispatch_inputs=""):
         return self.run_action("wait-for-ci", GH_TOKEN="token", CI_SHA=SHA, CI_BRANCH=branch, REPO_SLUG="owner/repo",
                                CI_WORKFLOW="build.yml", CI_TIMEOUT_MINUTES="1", CI_POLL_SECONDS="0",
-                               CI_SETTLE_SECONDS="0", FAKE_STATE=self.fake_state)
+                               CI_SETTLE_SECONDS="0", CI_DISPATCH_INPUTS=dispatch_inputs, FAKE_STATE=self.fake_state)
 
     def test_returns_the_successful_push_run(self):
         # GIVEN
@@ -137,12 +151,41 @@ class TestWaitForCi(ActionTestCase):
         self.assertIn("HTTP 404: Not Found", result.stdout)
         self.assertNotIn("Traceback", result.stderr)
 
-    def test_fails_without_a_push_run(self):
+    def test_starts_a_fresh_run_without_a_push_run(self):
         # GIVEN
-        self.given_github(SHA, None)
+        self.given_github(SHA, None, dispatched={"id": 9, "head_sha": SHA, "status": "completed",
+                                                 "conclusion": "success", "run_attempt": 1})
+
+        # WHEN
+        result = self.wait_for_ci(dispatch_inputs="run_integration_tests=true")
+
+        # THEN
+        self.assert_succeeds(result)
+        self.assertEqual("9", self.outputs()["run_id"])
+        self.assertIn("api -X POST repos/owner/repo/actions/workflows/build.yml/dispatches", self.calls())
+        self.assertEqual({"ref": "develop", "inputs": {"run_integration_tests": "true"}, "return_run_details": True},
+                         self.dispatch_body())
+
+    def test_fails_when_the_fresh_run_fails(self):
+        # GIVEN
+        self.given_github(SHA, None, dispatched={"id": 9, "head_sha": SHA, "status": "completed",
+                                                 "conclusion": "failure", "run_attempt": 1})
+        self.given_fake_command("gh", FAKE_GH.replace('conclusion="success"', 'conclusion="failure"'))
 
         # WHEN
         result = self.wait_for_ci()
 
         # THEN
         self.assert_fails(result)
+
+    def test_fails_when_the_fresh_run_builds_another_commit(self):
+        # GIVEN
+        self.given_github(SHA, None, dispatched={"id": 9, "head_sha": "def456", "status": "queued",
+                                                 "run_attempt": 1})
+
+        # WHEN
+        result = self.wait_for_ci()
+
+        # THEN
+        self.assert_fails(result)
+        self.assertIn("HEAD moved during release", result.stdout)

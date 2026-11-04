@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased](https://github.com/alexdlaird/shipshape/compare/1.1.1...HEAD)
+
+### Added
+
+- `wait-for-ci` starts a fresh run of the workflow on the branch when the commit has no push run, instead of failing,
+  and takes `dispatch-inputs` for it. It still ignores dispatch runs it didn't start, whose inputs may skip work.
+
 ## [1.1.1](https://github.com/alexdlaird/shipshape/compare/1.1.0...1.1.1) - 2026-11-03
 
 ### Fixed
