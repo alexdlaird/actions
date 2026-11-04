@@ -76,8 +76,9 @@ a minor chosen ahead of a release, is never lowered.
 ```
 
 [`wait-for-ci`](https://github.com/alexdlaird/shipshape/blob/main/wait-for-ci/action.yml) outputs the `run-id` that
-tested the commit, whose artifacts are what the release ships. If the push never started a run, it starts a fresh one
-on the branch (with `dispatch-inputs`, one `name=value` per line) and waits on that instead.
+tested the commit, whose artifacts are what the release ships. If no push run registers within `push-wait-seconds`
+(5 minutes), it starts a fresh one on the branch (with `dispatch-inputs`, one `name=value` per line) and waits on
+that instead.
 
 ### Deploy as Its Own Run
 

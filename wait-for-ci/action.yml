@@ -31,6 +31,10 @@ inputs:
     description: 'How often to look for the run to register, or for a re-run to start'
     required: false
     default: '5'
+  push-wait-seconds:
+    description: 'How long to wait for the push run to register before starting a fresh run'
+    required: false
+    default: '300'
   dispatch-inputs:
     description: "The workflow's inputs, one name=value per line, if it has to start a fresh run"
     required: false
@@ -56,5 +60,6 @@ runs:
         CI_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
         CI_POLL_SECONDS: ${{ inputs.poll-seconds }}
         CI_SETTLE_SECONDS: ${{ inputs.settle-seconds }}
+        CI_PUSH_WAIT_SECONDS: ${{ inputs.push-wait-seconds }}
         CI_DISPATCH_INPUTS: ${{ inputs.dispatch-inputs }}
       run: python3 "${{ github.action_path }}/wait-for-ci.py"

@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased](https://github.com/alexdlaird/shipshape/compare/1.2.0...HEAD)
 
+### Fixed
+
+- `wait-for-ci` waits up to `push-wait-seconds` (5 minutes) for the push run to register before starting a fresh one.
+  GitHub can register a push run minutes late, and starting one after a minute built the commit twice.
+
 ## [1.2.0](https://github.com/alexdlaird/shipshape/compare/1.1.1...1.2.0) - 2026-11-04
 
 ### Added

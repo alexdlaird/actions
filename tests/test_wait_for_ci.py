@@ -43,7 +43,12 @@ path = args[1]
 if "/git/refs/heads/" in path:
     body = load("head.json")
 elif "/runs?" in path:
-    body = load("runs.json")
+    with open(os.path.join(state, "lookups"), "a") as f:
+        f.write(".")
+    with open(os.path.join(state, "lookups")) as f:
+        lookups = len(f.read())
+    late = int(os.environ.get("PUSH_RUN_AFTER_LOOKUPS", "0"))
+    body = load("runs.json") if lookups > late else {"workflow_runs": []}
 else:
     body = load("run.json")
 
@@ -73,10 +78,12 @@ class TestWaitForCi(ActionTestCase):
         with open(os.path.join(self.fake_state, "calls")) as f:
             return f.read()
 
-    def wait_for_ci(self, branch="develop", dispatch_inputs=""):
+    def wait_for_ci(self, branch="develop", dispatch_inputs="", push_wait_seconds="0", push_run_after_lookups=0):
         return self.run_action("wait-for-ci", GH_TOKEN="token", CI_SHA=SHA, CI_BRANCH=branch, REPO_SLUG="owner/repo",
                                CI_WORKFLOW="build.yml", CI_TIMEOUT_MINUTES="1", CI_POLL_SECONDS="0",
-                               CI_SETTLE_SECONDS="0", CI_DISPATCH_INPUTS=dispatch_inputs, FAKE_STATE=self.fake_state)
+                               CI_SETTLE_SECONDS="0", CI_PUSH_WAIT_SECONDS=push_wait_seconds,
+                               CI_DISPATCH_INPUTS=dispatch_inputs, PUSH_RUN_AFTER_LOOKUPS=str(push_run_after_lookups),
+                               FAKE_STATE=self.fake_state)
 
     def test_returns_the_successful_push_run(self):
         # GIVEN
@@ -138,9 +145,11 @@ class TestWaitForCi(ActionTestCase):
     def test_reports_github_errors(self):
         # GIVEN
         self.given_github(SHA, {"id": 7, "status": "completed", "conclusion": "success", "run_attempt": 1})
-        failing_runs_lookup = 'elif "/runs?" in path:\n    sys.stderr.write("HTTP 404: Not Found\\n")\n    sys.exit(1)'
-        self.given_fake_command("gh", FAKE_GH.replace('elif "/runs?" in path:\n    body = load("runs.json")',
-                                                      failing_runs_lookup))
+        failing_runs_lookup = ('elif "/runs?" in path:\n'
+                               '    sys.stderr.write("HTTP 404: Not Found\\n")\n'
+                               '    sys.exit(1)\n')
+        self.assertIn('elif "/runs?" in path:\n', FAKE_GH)
+        self.given_fake_command("gh", FAKE_GH.replace('elif "/runs?" in path:\n', failing_runs_lookup))
 
         # WHEN
         result = self.wait_for_ci()
@@ -150,6 +159,20 @@ class TestWaitForCi(ActionTestCase):
         self.assertIn("::error::gh api repos/owner/repo/actions/workflows/build.yml/runs", result.stdout)
         self.assertIn("HTTP 404: Not Found", result.stdout)
         self.assertNotIn("Traceback", result.stderr)
+
+    def test_waits_for_a_late_push_run_instead_of_starting_one(self):
+        # GIVEN
+        self.given_github(SHA, {"id": 7, "status": "completed", "conclusion": "success", "run_attempt": 1},
+                          dispatched={"id": 9, "head_sha": SHA, "status": "completed", "conclusion": "success",
+                                      "run_attempt": 1})
+
+        # WHEN
+        result = self.wait_for_ci(push_wait_seconds="60", push_run_after_lookups=20)
+
+        # THEN
+        self.assert_succeeds(result)
+        self.assertEqual("7", self.outputs()["run_id"], "the push run that registered late")
+        self.assertNotIn("-X POST", self.calls(), "no fresh run while the push run may still register")
 
     def test_starts_a_fresh_run_without_a_push_run(self):
         # GIVEN

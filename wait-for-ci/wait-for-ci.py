@@ -8,7 +8,7 @@ import sys
 import time
 from typing import Dict, NoReturn, Optional
 
-# Waits for a run to register, or for a re-run to start, take this many settle intervals at most
+# A wait for a re-run to start takes this many settle intervals at most
 SETTLE_ATTEMPTS = 12
 
 
@@ -74,6 +74,7 @@ def main() -> None:
     timeout_minutes = int(os.environ["CI_TIMEOUT_MINUTES"])
     poll_seconds = int(os.environ.get("CI_POLL_SECONDS", "30"))
     settle_seconds = int(os.environ.get("CI_SETTLE_SECONDS", "5"))
+    push_wait_seconds = int(os.environ.get("CI_PUSH_WAIT_SECONDS", "300"))
     dispatch_inputs = parse_inputs(os.environ.get("CI_DISPATCH_INPUTS", ""))
     deadline = time.time() + timeout_minutes * 60
 
@@ -81,12 +82,11 @@ def main() -> None:
     if current != sha:
         fail(f"{branch} HEAD moved during release (was {sha}, now {current}). Re-run.")
 
-    latest = None
-    for _ in range(SETTLE_ATTEMPTS):
-        latest = latest_push_run(repo_slug, workflow, sha, branch)
-        if latest:
-            break
+    latest = latest_push_run(repo_slug, workflow, sha, branch)
+    push_deadline = time.time() + push_wait_seconds
+    while not latest and time.time() < push_deadline:
         time.sleep(settle_seconds)
+        latest = latest_push_run(repo_slug, workflow, sha, branch)
 
     if not latest:
         latest = dispatch_run(repo_slug, workflow, sha, branch, dispatch_inputs)
