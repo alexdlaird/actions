@@ -166,7 +166,7 @@ onto HTTP/1.1 and retries transient CDN errors.
 ## Documentation
 
 Each action's inputs and outputs are documented in its `action.yml`. For complete workflows built from them, see
-the reusable release workflows in [`alexdlaird/.github`](https://github.com/alexdlaird/.github), and the projects that
+the reusable release workflows in [`alexdlaird/.github`](https://github.com/alexdlaird/.github/tree/main/.github/workflows), and the projects that
 release with them, like [`pyngrok`](https://github.com/alexdlaird/pyngrok/blob/main/.github/workflows/release.yml)
 and [Helium](https://github.com/HeliumEdu/frontend/blob/main/.github/workflows/release.yml).
 
