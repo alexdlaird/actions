@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased](https://github.com/alexdlaird/shipshape/compare/1.2.1...HEAD)
 
+### Added
+
+- `sentry-release` creates the Sentry release for a version, associates the commits it adds, and finalizes it, so a
+  release can create it before its deploy reports to Sentry.
+
 ## [1.2.1](https://github.com/alexdlaird/shipshape/compare/1.2.0...1.2.1) - 2026-11-04
 
 ### Fixed

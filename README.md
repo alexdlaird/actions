@@ -97,6 +97,26 @@ deploy does.
       version=${{ needs.prereq.outputs.version }}
 ```
 
+### Sentry Releases
+
+[`sentry-release`](https://github.com/alexdlaird/shipshape/blob/main/sentry-release/action.yml) creates the Sentry
+release for a version, associates its commits, and finalizes it. Run it from a full-history checkout of the released
+commit, before a deploy reports itself to Sentry, which needs the release to exist.
+
+```yaml
+- uses: actions/checkout@v6
+  with:
+    ref: ${{ needs.prereq.outputs.squash_commit_sha }}
+    fetch-depth: 0
+
+- name: Create the Sentry release
+  uses: alexdlaird/shipshape/sentry-release@v1
+  with:
+    version: ${{ needs.prereq.outputs.version }}
+    sentry-properties: sentry.properties
+    sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+```
+
 ### Release Notes and the Changelog
 
 [`prepare-release`](https://github.com/alexdlaird/shipshape/blob/main/prepare-release/action.yml) moves a
@@ -160,6 +180,7 @@ and [Helium](https://github.com/HeliumEdu/frontend/blob/main/.github/workflows/r
 | [`wait-for-ci`](https://github.com/alexdlaird/shipshape/blob/main/wait-for-ci/action.yml) | Wait for a commit's CI push run, re-running failed jobs once or starting one if missing |
 | [`prepare-release`](https://github.com/alexdlaird/shipshape/blob/main/prepare-release/action.yml) | Release notes, from `CHANGELOG.md` or commit subjects |
 | [`security-versions`](https://github.com/alexdlaird/shipshape/blob/main/security-versions/action.yml) | Point `SECURITY.md` at a new minor |
+| [`sentry-release`](https://github.com/alexdlaird/shipshape/blob/main/sentry-release/action.yml) | Create, associate commits with, and finalize a Sentry release |
 | [`ios-deploy-lock`](https://github.com/alexdlaird/shipshape/blob/main/ios-deploy-lock/action.yml) | Take turns deploying iOS apps on a shared Mac |
 | [`pod-install`](https://github.com/alexdlaird/shipshape/blob/main/pod-install/action.yml) | `pod install` that survives CocoaPods' CDN |
 | [`select-xcode`](https://github.com/alexdlaird/shipshape/blob/main/select-xcode/action.yml) | Select the newest stable Xcode |

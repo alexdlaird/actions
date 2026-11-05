@@ -1,0 +1,29 @@
+name: 'Sentry Release'
+description: "Create a Sentry release for a version, associate the commits it adds, and finalize it. Run from a checkout of the released commit with full history (fetch-depth: 0), before anything reports a deploy of the release to Sentry."
+
+inputs:
+  version:
+    description: 'The release version'
+    required: true
+  sentry-properties:
+    description: "Path to the sentry.properties naming the Sentry org and project"
+    required: true
+  sentry-auth-token:
+    description: 'Sentry auth token with release access'
+    required: true
+  sentry-cli-version:
+    description: 'The sentry-cli version to install'
+    required: false
+    default: '3.6.2'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Create the Sentry release
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+        SENTRY_PROPERTIES: ${{ inputs.sentry-properties }}
+        SENTRY_AUTH_TOKEN: ${{ inputs.sentry-auth-token }}
+        SENTRY_CLI_VERSION: ${{ inputs.sentry-cli-version }}
+      run: "${{ github.action_path }}/sentry-release.sh"
