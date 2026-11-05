@@ -97,6 +97,23 @@ deploy does.
       version=${{ needs.prereq.outputs.version }}
 ```
 
+The deploy then finds what to ship with
+[`resolve-release`](https://github.com/alexdlaird/shipshape/blob/main/resolve-release/action.yml): the version (the
+newest tag when blank) and, from its tag, the commit and the `Build-Run` the release recorded. A release hands both
+over directly, since it tags only after deploying.
+
+```yaml
+- name: Find the release
+  id: release
+  uses: alexdlaird/shipshape/resolve-release@v1
+  with:
+    token: ${{ github.token }}
+    version: ${{ inputs.version }}
+    ref: ${{ inputs.ref }}
+    build-run-id: ${{ inputs.build_run_id }}
+    require-build-run: true
+```
+
 ### Sentry Releases
 
 [`sentry-release`](https://github.com/alexdlaird/shipshape/blob/main/sentry-release/action.yml) creates the Sentry
@@ -177,6 +194,7 @@ and [Helium](https://github.com/HeliumEdu/frontend/blob/main/.github/workflows/r
 | [`check-unreleased`](https://github.com/alexdlaird/shipshape/blob/main/check-unreleased/action.yml) | Fail if a version is already tagged |
 | [`verify-tree`](https://github.com/alexdlaird/shipshape/blob/main/verify-tree/action.yml) | Fail unless the code about to ship is the tested commit's |
 | [`run-workflow`](https://github.com/alexdlaird/shipshape/blob/main/run-workflow/action.yml) | Run a workflow and wait for that run, failing if it fails |
+| [`resolve-release`](https://github.com/alexdlaird/shipshape/blob/main/resolve-release/action.yml) | Resolve a released version, and its commit and `Build-Run` from its tag |
 | [`wait-for-ci`](https://github.com/alexdlaird/shipshape/blob/main/wait-for-ci/action.yml) | Wait for a commit's CI push run, re-running failed jobs once or starting one if missing |
 | [`prepare-release`](https://github.com/alexdlaird/shipshape/blob/main/prepare-release/action.yml) | Release notes, from `CHANGELOG.md` or commit subjects |
 | [`security-versions`](https://github.com/alexdlaird/shipshape/blob/main/security-versions/action.yml) | Point `SECURITY.md` at a new minor |

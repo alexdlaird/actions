@@ -1,0 +1,63 @@
+name: 'Resolve Release'
+description: "Resolve a released version (the newest X.Y.Z tag when none is given) and, from its tag, the commit and the Build-Run it names."
+
+inputs:
+  token:
+    description: 'GitHub token with read access to the repo'
+    required: true
+  version:
+    description: 'The version to resolve; blank resolves the newest tag matching version-regex'
+    required: false
+    default: ''
+  ref:
+    description: "The release's commit, when known before its tag exists (skips reading it from the tag)"
+    required: false
+    default: ''
+  build-run-id:
+    description: "The release's Build run, when known before its tag exists"
+    required: false
+    default: ''
+  read-tag:
+    description: "Read the commit and Build-Run from the version's tag when they aren't given"
+    required: false
+    default: 'true'
+  require-build-run:
+    description: 'Fail unless a Build run is given or the tag names one'
+    required: false
+    default: 'false'
+  version-regex:
+    description: 'jq-compatible regex for selecting version tags'
+    required: false
+    default: '^[0-9]+\.[0-9]+\.[0-9]+$'
+  repo-slug:
+    description: 'owner/repo'
+    required: false
+    default: ${{ github.repository }}
+
+outputs:
+  version:
+    description: 'The resolved version'
+    value: ${{ steps.resolve.outputs.version }}
+  ref:
+    description: "The release's commit (blank when not read)"
+    value: ${{ steps.resolve.outputs.ref }}
+  build-run-id:
+    description: "The release's Build run (blank when not read or not named)"
+    value: ${{ steps.resolve.outputs.build_run_id }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve the release
+      id: resolve
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        VERSION: ${{ inputs.version }}
+        REF: ${{ inputs.ref }}
+        BUILD_RUN_ID: ${{ inputs.build-run-id }}
+        READ_TAG: ${{ inputs.read-tag }}
+        REQUIRE_BUILD_RUN: ${{ inputs.require-build-run }}
+        VERSION_REGEX: ${{ inputs.version-regex }}
+        REPO_SLUG: ${{ inputs.repo-slug }}
+      run: "${{ github.action_path }}/resolve-release.sh"

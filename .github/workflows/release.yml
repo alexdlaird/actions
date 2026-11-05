@@ -2,10 +2,6 @@ name: Release
 
 run-name: Release ${{ inputs.bump_type }}
 
-# Bumps VERSION from the last release tag, dates the CHANGELOG's [Unreleased] entries under it, and commits that to
-# main as the release, then publishes the GitHub Release and moves the major tag (`v1`) callers pin. The steps run
-# this repo's scripts from the commit being released, never a published tag, so a release never depends on the
-# version it replaces.
 on:
   workflow_dispatch:
     inputs:
@@ -20,7 +16,7 @@ on:
           - major
 
 permissions:
-  contents: write
+  contents: read
   actions: write
 
 concurrency:
@@ -28,152 +24,12 @@ concurrency:
 
 jobs:
   release:
-    name: Release
-    runs-on: ubuntu-latest
-
-    env:
-      PYTHONDONTWRITEBYTECODE: 1
-
-    steps:
-      - name: Generate GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          client-id: ${{ secrets.RELEASE_BOT_APP_ID }}
-          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
-
-      - uses: actions/checkout@v6
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          ref: main
-          fetch-depth: 0
-
-      - name: Record the tested commit
-        id: tested
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Wait for main's Build to pass
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CI_SHA: ${{ steps.tested.outputs.sha }}
-          CI_BRANCH: main
-          REPO_SLUG: ${{ github.repository }}
-          CI_WORKFLOW: build.yml
-          CI_TIMEOUT_MINUTES: 30
-        run: python3 wait-for-ci/wait-for-ci.py
-
-      - name: Read the current version
-        id: current
-        run: |
-          VERSION=$(tr -d '[:space:]' < VERSION)
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::VERSION holds '${VERSION}', not X.Y.Z"
-            exit 1
-          fi
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Compute the release version
-        id: next
-        env:
-          BUMP_TYPE: ${{ inputs.bump_type }}
-          VERSION_PARTS: 3
-          CURRENT: ${{ steps.current.outputs.version }}
-          CURRENT_FILE_VERSION: ${{ steps.current.outputs.version }}
-        run: python3 next-version/next-version.py
-
-      - name: Pre-validate the version is unreleased
-        env:
-          VERSION: ${{ steps.next.outputs.version }}
-        run: bash check-unreleased/check-unreleased.sh
-
-      - name: Date the CHANGELOG's entries under the version
-        id: notes
-        env:
-          CHANGELOG: 'true'
-          NEW_VERSION: ${{ steps.next.outputs.version }}
-          VERSION_PARTS: 3
-          REPO_SLUG: ${{ github.repository }}
-        run: python3 prepare-release/prepare-release.py
-
-      - name: Bump VERSION and SECURITY.md
-        env:
-          NEW_VERSION: ${{ steps.next.outputs.version }}
-        run: |
-          echo "$NEW_VERSION" > VERSION
-          python3 security-versions/security-versions.py
-
-      - name: Verify the release changes only its version files
-        run: |
-          CHANGED=$(git status --porcelain --untracked-files=all | cut -c4-)
-          UNEXPECTED=$(grep -vxE 'VERSION|CHANGELOG\.md|SECURITY\.md' <<< "$CHANGED" || true)
-          if [ -n "$UNEXPECTED" ]; then
-            echo "::error::The release changed more than its version files: ${UNEXPECTED//$'\n'/, }"
-            exit 1
-          fi
-          git diff
-
-      - name: Commit the release to main (signed)
-        id: push
-        uses: IAreKyleW00t/verified-bot-commit@v2.3.5
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          repository: ${{ github.repository }}
-          ref: main
-          files: '**'
-          if-no-commit: error
-          message: |
-            Release ${{ steps.next.outputs.version }}
-
-            ${{ steps.notes.outputs.release_notes }}
-
-      - name: Verify the release commit is the tested commit plus its version files
-        env:
-          COMMIT: ${{ steps.push.outputs.commit }}
-          TESTED_SHA: ${{ steps.tested.outputs.sha }}
-        run: |
-          git fetch -q origin main
-          PARENT=$(git rev-parse "${COMMIT}^")
-          if [ "$PARENT" != "$TESTED_SHA" ]; then
-            echo "::error::main moved during release: ${COMMIT:0:7} landed on ${PARENT:0:7}, not the tested ${TESTED_SHA:0:7}. Revert it, then re-run."
-            exit 1
-          fi
-          UNEXPECTED=$(git diff --name-only "$TESTED_SHA" "$COMMIT" | grep -vxE 'VERSION|CHANGELOG\.md|SECURITY\.md' || true)
-          if [ -n "$UNEXPECTED" ]; then
-            echo "::error::${COMMIT:0:7} changed more than its version files: ${UNEXPECTED//$'\n'/, }. Revert it, then re-run."
-            exit 1
-          fi
-
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.next.outputs.version }}
-          SHA: ${{ steps.push.outputs.commit }}
-          RELEASE_NOTES: ${{ steps.notes.outputs.release_notes }}
-        run: |
-          gh release create "$VERSION" \
-            --target "$SHA" \
-            --title "$VERSION" \
-            --notes "$RELEASE_NOTES"
-
-      # Callers pin the major tag, so it moves to every release of that major
-      - name: Move the major version tag
-        env:
-          VERSION: ${{ steps.next.outputs.version }}
-          SHA: ${{ steps.push.outputs.commit }}
-        run: |
-          MAJOR_TAG="v${VERSION%%.*}"
-          git tag -f "$MAJOR_TAG" "$SHA"
-          git push -f origin "refs/tags/${MAJOR_TAG}"
-          echo "${MAJOR_TAG} -> ${SHA:0:7}"
-
-      - name: Add release to job summary
-        env:
-          VERSION: ${{ steps.next.outputs.version }}
-          SHA: ${{ steps.push.outputs.commit }}
-          REPO_SLUG: ${{ github.repository }}
-        run: |
-          {
-            echo "## Release \`${VERSION}\`"
-            echo ""
-            echo "Release commit: [\`${SHA:0:7}\`](https://github.com/${REPO_SLUG}/commit/${SHA})"
-          } >> "$GITHUB_STEP_SUMMARY"
+    uses: alexdlaird/.github/.github/workflows/release-main.yml@main
+    with:
+      bump_type: ${{ inputs.bump_type }}
+      version_file: VERSION
+      version_pattern: 's/.*/${VERSION}/'
+      move_major_tag: true
+    secrets:
+      bot_app_id: ${{ secrets.RELEASE_BOT_APP_ID }}
+      bot_private_key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}

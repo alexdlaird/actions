@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# Reads a version from its file with the match part of the sed expression that writes it, so one setting
-# describes the file however it's formatted. Two-part versions (X.Y) are written as X.Y.0 and read back as X.Y.
-# Inputs (environment): VERSION_FILE, VERSION_PATTERN, VERSION_PARTS (2 or 3), REF (a commit, or empty for the working
-# tree). Outputs: version, file_version.
+# Reads with the match part of the sed expression that writes the version, so one setting describes the file however
+# it's formatted. Two-part versions (X.Y) are written as X.Y.0.
 set -euo pipefail
 
 MATCH=$(sed -E 's#^s/(([^/\\]|\\.)*)/.*#\1#' <<< "$VERSION_PATTERN")

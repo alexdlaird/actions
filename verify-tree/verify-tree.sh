@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# Fails unless the code about to ship is exactly the tested commit's: the working tree (untracked files included) when
-# COMMIT is empty, otherwise that commit (fetched from origin when missing). In changelog mode CHANGELOG.md, which
-# the release rewrites, is the one file allowed to differ.
-# Inputs (environment): TESTED_SHA, COMMIT, CHANGELOG (true or false).
+# Compares the working tree (untracked files included) when COMMIT is empty, otherwise COMMIT (fetched when missing).
+# In changelog mode CHANGELOG.md, which the release rewrites, may differ.
 set -eo pipefail
 
 EXCLUDE=()

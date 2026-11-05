@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased](https://github.com/alexdlaird/shipshape/compare/1.3.0...HEAD)
 
+### Added
+
+- `resolve-release` resolves a released version (the newest tag when none is given) and, from its tag, the commit
+  and the `Build-Run` its release recorded, so a deploy finds what to ship.
+
 ## [1.3.0](https://github.com/alexdlaird/shipshape/compare/1.2.1...1.3.0) - 2026-11-05
 
 ### Added

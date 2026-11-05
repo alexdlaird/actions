@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# Takes or releases a machine-wide lock so iOS deploys on a shared self-hosted Mac take turns: they share its keychain
-# search list, ~/.appstoreconnect and provisioning profiles. A lock whose holder is gone, or older than any job may
-# run, is broken.
-# Inputs (environment): MODE (acquire or release), LOCK_PATH, STALE_MINUTES, POLL_SECONDS (default 15).
+# iOS deploys on a shared self-hosted Mac share its keychain search list, ~/.appstoreconnect and provisioning
+# profiles, so they take turns. A lock whose holder is gone, or older than any job may run, is broken.
 set -eo pipefail
 
 LOCK="${LOCK_PATH/#\~/$HOME}"

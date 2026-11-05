@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
-# Runs pod install for a Flutter iOS app, forcing CocoaPods' CDN client onto HTTP/1.1 (cocoapods_http11.rb) and
-# retrying transient CDN errors.
-# Inputs (environment): IOS_DIRECTORY, ATTEMPTS, SHIM.
+# Forces CocoaPods' CDN client onto HTTP/1.1 (cocoapods_http11.rb) and retries transient CDN errors.
 set -eo pipefail
 
 # The xcodeproj gem CocoaPods uses can't open objectVersion 70 (Xcode 16+); Flutter's build migrates it back

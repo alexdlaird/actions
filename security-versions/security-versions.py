@@ -41,7 +41,6 @@ def main() -> None:
     with open(SECURITY_FILE) as f:
         security = f.read()
 
-    # Only when its table lists versions by X.Y.x and doesn't have this minor yet
     if not MINOR_ROW_PATTERN.search(security) or re.search(rf"^\| {re.escape(new_minor)}\.x ", security, re.MULTILINE):
         return
 

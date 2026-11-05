@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# Creates a Sentry release for a version, associates the commits it adds (from the local checkout's history), and
-# finalizes it.
-# Inputs (environment): VERSION, SENTRY_PROPERTIES, SENTRY_AUTH_TOKEN, SENTRY_CLI_VERSION; sentry-cli reads the
-# SENTRY_* ones itself.
+# sentry-cli reads the SENTRY_* inputs from the environment itself.
 set -euo pipefail
 
 if [ ! -f "$SENTRY_PROPERTIES" ]; then
