@@ -3,7 +3,7 @@ description: "Fail if a version is already released: tagged as X.Y.Z, or as X.Y.
 
 inputs:
   version:
-    description: 'The version about to be released'
+    description: "The version about to be released"
     required: true
 
 runs:

@@ -8,7 +8,6 @@ import tempfile
 from tests.testcase import ActionTestCase
 
 FAKE_GH = """#!/usr/bin/env python3
-# Answers the gh api calls resolve-release makes from JSON in FAKE_STATE, applying --jq like gh does
 import json, os, subprocess, sys
 
 state = os.environ["FAKE_STATE"]

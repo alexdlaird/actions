@@ -21,7 +21,7 @@ class TestSecurityVersions(ActionTestCase):
 """)
 
     def security_versions(self, version):
-        return self.run_action("security-versions", NEW_VERSION=version)
+        return self.run_action("security-versions", VERSION=version)
 
     def test_points_the_table_at_a_new_minor(self):
         # GIVEN

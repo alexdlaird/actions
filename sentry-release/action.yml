@@ -3,16 +3,16 @@ description: "Create a Sentry release for a version, associate the commits it ad
 
 inputs:
   version:
-    description: 'The release version'
+    description: "The release version"
     required: true
   sentry-properties:
-    description: "Path to the sentry.properties naming the Sentry org and project"
+    description: "The path to the sentry.properties naming the Sentry org and project"
     required: true
   sentry-auth-token:
-    description: 'Sentry auth token with release access'
+    description: "A Sentry auth token with release access"
     required: true
   sentry-cli-version:
-    description: 'The sentry-cli version to install'
+    description: "The sentry-cli version to install"
     required: false
     default: '3.6.2'
 

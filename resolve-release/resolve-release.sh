@@ -4,7 +4,7 @@ set -euo pipefail
 if [ -z "$VERSION" ]; then
   VERSION=$(gh api "repos/${REPO_SLUG}/tags" | jq -r --arg regex "$VERSION_REGEX" '[.[] | select(.name | test($regex))][0].name')
   if [ -z "$VERSION" ] || [ "$VERSION" = "null" ]; then
-    echo "::error::No version tags matching '${VERSION_REGEX}' found in ${REPO_SLUG}"
+    echo "::error::No version tags matching \"${VERSION_REGEX}\" found in ${REPO_SLUG}"
     exit 1
   fi
 fi
@@ -23,7 +23,7 @@ if [ "$READ_TAG" = "true" ] && { [ -z "$REF" ] || { [ "$REQUIRE_BUILD_RUN" = "tr
 fi
 
 if [ "$REQUIRE_BUILD_RUN" = "true" ] && [ -z "$BUILD_RUN_ID" ]; then
-  echo "::error::Tag ${VERSION} names no Build-Run, so its builds can't be found."
+  echo "::error::Tag ${VERSION} names no Build-Run, so its builds can't be found"
   exit 1
 fi
 

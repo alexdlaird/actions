@@ -3,10 +3,10 @@ description: "Resolve a released version (the newest X.Y.Z tag when none is give
 
 inputs:
   token:
-    description: 'GitHub token with read access to the repo'
+    description: "A GitHub token with read access to the repo"
     required: true
   version:
-    description: 'The version to resolve; blank resolves the newest tag matching version-regex'
+    description: "The version to resolve; blank resolves the newest tag matching version-regex"
     required: false
     default: ''
   ref:
@@ -22,21 +22,21 @@ inputs:
     required: false
     default: 'true'
   require-build-run:
-    description: 'Fail unless a Build run is given or the tag names one'
+    description: "Fail unless a Build run is given or the tag names one"
     required: false
     default: 'false'
   version-regex:
-    description: 'jq-compatible regex for selecting version tags'
+    description: "A jq-compatible regex for selecting version tags"
     required: false
     default: '^[0-9]+\.[0-9]+\.[0-9]+$'
   repo-slug:
-    description: 'owner/repo'
+    description: "The repo, as owner/repo"
     required: false
     default: ${{ github.repository }}
 
 outputs:
   version:
-    description: 'The resolved version'
+    description: "The resolved version"
     value: ${{ steps.resolve.outputs.version }}
   ref:
     description: "The release's commit (blank when not read)"

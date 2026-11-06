@@ -13,12 +13,6 @@ ROOT = os.path.normpath(os.path.join(os.path.abspath(os.path.dirname(__file__)),
 
 
 class ActionTestCase(unittest.TestCase):
-    """
-    Runs an action's script the way its ``action.yml`` does: inputs as environment variables, from a git repo working
-    directory, with outputs written to ``GITHUB_OUTPUT``. Tests only see what the script does, not what it's written
-    in.
-    """
-
     def setUp(self):
         self.work_dir = tempfile.mkdtemp()
         self.fake_bin = tempfile.mkdtemp()
@@ -42,14 +36,12 @@ class ActionTestCase(unittest.TestCase):
         action_env = dict(os.environ,
                           PATH=f"{self.fake_bin}{os.pathsep}{os.environ['PATH']}",
                           GITHUB_OUTPUT=self.github_output,
+                          PYTHONPATH=ROOT,
                           **env)
 
         return subprocess.run(command, cwd=cwd or self.work_dir, env=action_env, capture_output=True, text=True)
 
     def outputs(self):
-        """
-        The outputs written so far, reading both ``name=value`` and multiline ``name<<DELIMITER`` entries.
-        """
         values = {}
         with open(self.github_output) as f:
             lines = f.read().splitlines()

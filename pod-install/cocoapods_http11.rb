@@ -3,7 +3,7 @@
 # cocoapods-core's CDNSource hardcodes `http_version: :httpv2_0` and fans many
 # podspec fetches out over one multiplexed connection. From the self-hosted
 # runner that path fails intermittently against cdn.jsdelivr.net with
-# "Error in the HTTP2 framing layer" — measured at 5–7 failed fetches per cold
+# "Error in the HTTP2 framing layer", measured at 5-7 failed fetches per cold
 # `pod install --repo-update`, and occasionally (as on 2026-09-16, the day
 # AppCheckCore 11.3.2 was published) a single podspec failing every one of
 # CocoaPods' own retries, which fails the whole iOS deploy. The same fetches

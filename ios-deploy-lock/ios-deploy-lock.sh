@@ -51,7 +51,7 @@ case "$MODE" in
     fi
     ;;
   *)
-    echo "::error::mode must be acquire or release, not ${MODE}"
+    echo "::error::\"mode\" must be \"acquire\" or \"release\", not ${MODE}"
     exit 1
     ;;
 esac

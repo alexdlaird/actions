@@ -3,39 +3,39 @@ description: "Prepare a squash release's notes. With changelog: check the versio
 
 inputs:
   version:
-    description: 'The version being released; changelog only'
+    description: "The version being released; changelog only"
     required: false
     default: ''
   version-parts:
-    description: '3 for X.Y.Z; 2 for X.Y'
+    description: "3 for X.Y.Z; 2 for X.Y"
     required: false
     default: '3'
   changelog:
-    description: "'true' when the repo keeps a CHANGELOG.md the release rewrites; otherwise the notes come from commits"
+    description: "Whether the repo keeps a CHANGELOG.md the release rewrites (\"true\"); otherwise the notes come from commits"
     required: false
     default: 'true'
   tested-sha:
-    description: 'The commit being released (for commit-subject notes)'
+    description: "The commit being released (for commit-subject notes)"
     required: false
     default: ''
   base:
-    description: 'The ref the release is cut onto; commits since it make the notes (for commit-subject notes)'
+    description: "The ref the release is cut onto; commits since it make the notes (for commit-subject notes)"
     required: false
     default: 'main'
   repo-slug:
-    description: 'GitHub repo slug (e.g. "alexdlaird/pyngrok"), for the changelog compare links; changelog only'
+    description: "GitHub repo slug (e.g. \"alexdlaird/pyngrok\"), for the changelog compare links; changelog only"
     required: false
     default: ''
 
 outputs:
   new-version:
-    description: 'The version being released (changelog only)'
+    description: "The version being released (changelog only)"
     value: ${{ steps.compute.outputs.new_version }}
   old-version:
-    description: 'Previous released version string (changelog only)'
+    description: "The previously released version (changelog only)"
     value: ${{ steps.compute.outputs.old_version }}
   release-notes:
-    description: 'The release notes: the changelog section, or the commit subjects (for the GitHub release body)'
+    description: "The release notes: the changelog section, or the commit subjects (for the GitHub release body)"
     value: ${{ steps.compute.outputs.release_notes }}
 
 runs:
@@ -45,10 +45,11 @@ runs:
       id: compute
       shell: bash
       env:
-        NEW_VERSION: ${{ inputs.version }}
+        PYTHONPATH: ${{ github.action_path }}/..
+        VERSION: ${{ inputs.version }}
         VERSION_PARTS: ${{ inputs.version-parts }}
         REPO_SLUG: ${{ inputs.repo-slug }}
         CHANGELOG: ${{ inputs.changelog }}
         TESTED_SHA: ${{ inputs.tested-sha }}
-        BASE_REF: ${{ inputs.base }}
+        BASE: ${{ inputs.base }}
       run: python3 "${{ github.action_path }}/prepare-release.py"

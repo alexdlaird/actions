@@ -3,36 +3,36 @@ description: "Wait for the push run of a CI workflow on a branch's HEAD commit t
 
 inputs:
   token:
-    description: 'Token that can read runs, re-run jobs, and start workflows (actions: write)'
+    description: "A token that can read runs, re-run jobs, and start workflows (actions: write)"
     required: true
   sha:
     description: "The commit to wait on; must still be the branch's HEAD"
     required: true
   branch:
-    description: 'The branch whose push builds the commit'
+    description: "The branch whose push builds the commit"
     required: false
     default: 'develop'
   repo-slug:
-    description: 'owner/repo'
+    description: "The repo, as owner/repo"
     required: true
   workflow:
-    description: 'The CI workflow file'
+    description: "The CI workflow file"
     required: false
     default: 'build.yml'
   timeout-minutes:
-    description: 'How long to wait for the run to finish'
+    description: "How long to wait for the run to finish"
     required: false
     default: '60'
   poll-seconds:
-    description: 'How often to check the run once it has started'
+    description: "How often to check the run once it has started"
     required: false
     default: '30'
   settle-seconds:
-    description: 'How often to look for the run to register, or for a re-run to start'
+    description: "How often to look for the run to register, or for a re-run to start"
     required: false
     default: '5'
   push-wait-seconds:
-    description: 'How long to wait for the push run to register before starting a fresh run'
+    description: "How long to wait for the push run to register before starting a fresh run"
     required: false
     default: '300'
   dispatch-inputs:
@@ -52,14 +52,15 @@ runs:
       id: wait
       shell: bash
       env:
+        PYTHONPATH: ${{ github.action_path }}/..
         GH_TOKEN: ${{ inputs.token }}
-        CI_SHA: ${{ inputs.sha }}
-        CI_BRANCH: ${{ inputs.branch }}
+        SHA: ${{ inputs.sha }}
+        BRANCH: ${{ inputs.branch }}
         REPO_SLUG: ${{ inputs.repo-slug }}
-        CI_WORKFLOW: ${{ inputs.workflow }}
-        CI_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
-        CI_POLL_SECONDS: ${{ inputs.poll-seconds }}
-        CI_SETTLE_SECONDS: ${{ inputs.settle-seconds }}
-        CI_PUSH_WAIT_SECONDS: ${{ inputs.push-wait-seconds }}
-        CI_DISPATCH_INPUTS: ${{ inputs.dispatch-inputs }}
+        WORKFLOW: ${{ inputs.workflow }}
+        TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+        POLL_SECONDS: ${{ inputs.poll-seconds }}
+        SETTLE_SECONDS: ${{ inputs.settle-seconds }}
+        PUSH_WAIT_SECONDS: ${{ inputs.push-wait-seconds }}
+        DISPATCH_INPUTS: ${{ inputs.dispatch-inputs }}
       run: python3 "${{ github.action_path }}/wait-for-ci.py"

@@ -34,7 +34,7 @@ def rewrite_table(lines: List[str], new_minor: str) -> List[str]:
 
 
 def main() -> None:
-    new_minor = os.environ["NEW_VERSION"].rsplit(".", 1)[0]
+    new_minor = os.environ["VERSION"].rsplit(".", 1)[0]
     if not os.path.exists(SECURITY_FILE):
         return
 

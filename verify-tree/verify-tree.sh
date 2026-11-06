@@ -18,7 +18,7 @@ if [ -z "$COMMIT" ]; then
 else
   git cat-file -e "${COMMIT}^{commit}" 2>/dev/null || git fetch -q origin "$COMMIT"
   if ! git diff --quiet "$TESTED_SHA" "$COMMIT" -- . "${EXCLUDE[@]}"; then
-    echo "::error::${COMMIT:0:7} is not the tested commit ${TESTED_SHA:0:7}'s code; stopping before anything ships."
+    echo "::error::${COMMIT:0:7} is not the tested commit ${TESTED_SHA:0:7}'s code; stopping before anything ships"
     exit 1
   fi
 fi

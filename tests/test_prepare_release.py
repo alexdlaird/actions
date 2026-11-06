@@ -28,11 +28,11 @@ class TestPrepareRelease(ActionTestCase):
         self.git("switch", "-q", "main")
 
     def prepare_release(self, version, parts="3"):
-        return self.run_action("prepare-release", NEW_VERSION=version, VERSION_PARTS=parts, REPO_SLUG="owner/repo",
+        return self.run_action("prepare-release", VERSION=version, VERSION_PARTS=parts, REPO_SLUG="owner/repo",
                                CHANGELOG="true", TESTED_SHA="")
 
     def commit_notes(self):
-        return self.run_action("prepare-release", NEW_VERSION="", VERSION_PARTS="3", REPO_SLUG="", CHANGELOG="false",
+        return self.run_action("prepare-release", VERSION="", VERSION_PARTS="3", REPO_SLUG="", CHANGELOG="false",
                                TESTED_SHA=self.tested_sha)
 
     def test_dates_the_unreleased_entries_under_the_version(self):

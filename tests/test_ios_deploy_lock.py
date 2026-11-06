@@ -28,10 +28,6 @@ class TestIosDeployLock(ActionTestCase):
                     GITHUB_REPOSITORY="owner/app", GITHUB_RUN_ID=str(run_id), GITHUB_RUN_ATTEMPT="1")
 
     def given_job_holding_the_lock(self, run_id):
-        """
-        A job the way the runner runs it: its Runner.Worker process takes the lock in one step (a shell that exits
-        with the step), then carries on with the rest of the job.
-        """
         step = os.path.join(self.fake_bin, "step.sh")
         with open(step, "w") as f:
             f.write(f'"{SCRIPT}"\n')

@@ -8,7 +8,6 @@ import tempfile
 from tests.testcase import ActionTestCase
 
 FAKE_GH = """#!/usr/bin/env python3
-# Answers the gh calls run-workflow makes: the dispatch returns DISPATCH_RESPONSE, the run read returns run.json
 import json, os, sys
 
 state = os.environ["FAKE_STATE"]
@@ -91,7 +90,7 @@ class TestRunWorkflow(ActionTestCase):
 
         # THEN
         self.assert_fails(result)
-        self.assertIn("concluded 'failure'", result.stdout)
+        self.assertIn('concluded "failure"', result.stdout)
 
     def test_reports_a_rejected_dispatch(self):
         # GIVEN

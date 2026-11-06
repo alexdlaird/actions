@@ -3,10 +3,10 @@ description: "Take or release a machine-wide lock so iOS deploys on a shared sel
 
 inputs:
   mode:
-    description: 'acquire or release'
+    description: "Either acquire or release"
     required: true
   lock-path:
-    description: 'Lock directory shared by every repo deploying on the machine'
+    description: "The lock directory shared by every repo deploying on the machine"
     required: false
     default: '~/.ios-deploy.lock'
   stale-minutes:

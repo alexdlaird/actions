@@ -3,7 +3,7 @@
 set -euo pipefail
 
 if [ ! -f "$SENTRY_PROPERTIES" ]; then
-  echo "::error::${SENTRY_PROPERTIES} not found, so there's no Sentry project to release ${VERSION} in."
+  echo "::error::${SENTRY_PROPERTIES} not found, so there's no Sentry project to release ${VERSION} in"
   exit 1
 fi
 

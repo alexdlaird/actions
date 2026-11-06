@@ -24,7 +24,7 @@ case "$VERSION_PARTS" in
     VERSION="${FILE_VERSION%.*}"
     ;;
   *)
-    echo "::error::version-parts must be 2 or 3, not ${VERSION_PARTS}"
+    echo "::error::\"version-parts\" must be 2 or 3, not ${VERSION_PARTS}"
     exit 1
     ;;
 esac

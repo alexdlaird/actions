@@ -3,11 +3,11 @@ description: "Run pod install for a Flutter iOS app, working around the CocoaPod
 
 inputs:
   ios-directory:
-    description: 'The iOS project directory'
+    description: "The iOS project directory"
     required: false
     default: 'ios'
   attempts:
-    description: 'How many times to try pod install'
+    description: "How many times to try pod install"
     required: false
     default: '3'
 

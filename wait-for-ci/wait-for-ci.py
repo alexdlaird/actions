@@ -3,53 +3,26 @@ __license__ = "MIT"
 
 import json
 import os
-import subprocess
-import sys
 import time
-from typing import Dict, NoReturn, Optional
+from typing import Any, Dict, Optional
+
+from shipshape import fail, gh, parse_inputs, write_outputs
 
 # A wait for a re-run to start takes this many settle intervals at most
 SETTLE_ATTEMPTS = 12
 
 
-def fail(message: str) -> NoReturn:
-    print(f"::error::{message}")
-    sys.exit(1)
-
-
-def gh(*args: str, stdin: str = "") -> str:
-    result = subprocess.run(["gh", *args], input=stdin, capture_output=True, text=True)
-    if result.returncode != 0:
-        fail(f"gh {' '.join(args)} failed: {(result.stderr or result.stdout).strip()}")
-    return result.stdout
-
-
-def gh_api(path: str) -> dict:
+def gh_api(path: str) -> Dict[str, Any]:
     return json.loads(gh("api", path))
 
 
-def latest_push_run(repo_slug: str, workflow: str, sha: str, branch: str) -> Optional[dict]:
+def latest_push_run(repo_slug: str, workflow: str, sha: str, branch: str) -> Optional[Dict[str, Any]]:
     # Only the push run builds the release candidates (a dispatch or PR run for the same SHA may not)
     runs = gh_api(f"repos/{repo_slug}/actions/workflows/{workflow}/runs?head_sha={sha}&event=push&branch={branch}")
     return max(runs["workflow_runs"], key=lambda run: run["id"], default=None)
 
 
-def parse_inputs(text: str) -> Dict[str, str]:
-    """
-    The workflow's inputs, one ``name=value`` per line.
-    """
-    inputs = {}
-    for line in text.splitlines():
-        if not line.strip():
-            continue
-        if "=" not in line:
-            fail(f"Input '{line}' isn't name=value")
-        name, value = line.split("=", 1)
-        inputs[name.strip()] = value.strip()
-    return inputs
-
-
-def dispatch_run(repo_slug: str, workflow: str, sha: str, branch: str, inputs: Dict[str, str]) -> dict:
+def dispatch_run(repo_slug: str, workflow: str, sha: str, branch: str, inputs: Dict[str, str]) -> Dict[str, Any]:
     """
     Start a fresh run of ``workflow`` on ``branch`` and return it, failing if it isn't building ``sha``.
     """
@@ -68,14 +41,14 @@ def dispatch_run(repo_slug: str, workflow: str, sha: str, branch: str, inputs: D
 
 def main() -> None:
     repo_slug = os.environ["REPO_SLUG"]
-    workflow = os.environ["CI_WORKFLOW"]
-    sha = os.environ["CI_SHA"]
-    branch = os.environ.get("CI_BRANCH", "develop")
-    timeout_minutes = int(os.environ["CI_TIMEOUT_MINUTES"])
-    poll_seconds = int(os.environ.get("CI_POLL_SECONDS", "30"))
-    settle_seconds = int(os.environ.get("CI_SETTLE_SECONDS", "5"))
-    push_wait_seconds = int(os.environ.get("CI_PUSH_WAIT_SECONDS", "300"))
-    dispatch_inputs = parse_inputs(os.environ.get("CI_DISPATCH_INPUTS", ""))
+    workflow = os.environ["WORKFLOW"]
+    sha = os.environ["SHA"]
+    branch = os.environ.get("BRANCH", "develop")
+    timeout_minutes = int(os.environ["TIMEOUT_MINUTES"])
+    poll_seconds = int(os.environ.get("POLL_SECONDS", "30"))
+    settle_seconds = int(os.environ.get("SETTLE_SECONDS", "5"))
+    push_wait_seconds = int(os.environ.get("PUSH_WAIT_SECONDS", "300"))
+    dispatch_inputs = parse_inputs(os.environ.get("DISPATCH_INPUTS", ""))
     deadline = time.time() + timeout_minutes * 60
 
     current = gh_api(f"repos/{repo_slug}/git/refs/heads/{branch}")["object"]["sha"]
@@ -93,11 +66,10 @@ def main() -> None:
         print(f"No {workflow} push run for {sha}; started run {latest['id']} on {branch}")
 
     run_id = latest["id"]
-    with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-        f.write(f"run_id={run_id}\n")
+    write_outputs(run_id=str(run_id))
 
     if latest["status"] == "completed" and latest.get("conclusion") != "success":
-        print(f"{workflow} run {run_id} concluded '{latest.get('conclusion')}'; re-running its failed jobs")
+        print(f"{workflow} run {run_id} concluded \"{latest.get('conclusion')}\"; re-running its failed jobs")
         gh("run", "rerun", str(run_id), "--failed", "--repo", repo_slug)
         for _ in range(SETTLE_ATTEMPTS):
             time.sleep(settle_seconds)
@@ -112,7 +84,7 @@ def main() -> None:
             if run.get("conclusion") == "success":
                 print(f"{workflow} run {run_id} succeeded on {branch} HEAD")
                 return
-            fail(f"{workflow} run {run_id} concluded '{run.get('conclusion') or ''}'")
+            fail(f"{workflow} run {run_id} concluded \"{run.get('conclusion') or ''}\"")
         print(f"{workflow} run {run_id} status={run['status']} ({int(deadline - time.time())}s remaining)")
         time.sleep(poll_seconds)
 

@@ -18,7 +18,7 @@ install: venv
 check: install
 	@( \
 		source $(PROJECT_VENV)/bin/activate; \
-		flake8 && mypy --ignore-missing-imports */*.py && shellcheck -S warning */*.sh; \
+		flake8 && mypy --ignore-missing-imports *.py */*.py && shellcheck -S warning */*.sh; \
 	)
 
 test:

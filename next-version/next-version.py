@@ -4,24 +4,14 @@ __license__ = "MIT"
 import os
 import re
 import subprocess
-import sys
-from typing import NoReturn, Optional, Tuple
+from typing import Optional, Tuple
+
+from shipshape import fail, write_outputs
 
 # Release tags are the bare version; X.Y.Z+N tags are from releases that also stamped a build number
 RELEASE_TAG_PATTERN = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?(?:\+(\d+))?$")
 
 VersionKey = Tuple[int, int, int, int]
-
-
-def fail(message: str) -> NoReturn:
-    print(f"::error::{message}")
-    sys.exit(1)
-
-
-def write_outputs(**outputs: str) -> None:
-    with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-        for name, value in outputs.items():
-            f.write(f"{name}={value}\n")
 
 
 def parse_version(version: str) -> Optional[VersionKey]:
@@ -55,7 +45,7 @@ def main() -> None:
     if bump_type == "next":
         bump_type = "minor" if two_part else "patch"
     if bump_type == "patch" and two_part:
-        fail("Two-part versions have no patch; bump minor or major.")
+        fail("Two-part versions have no patch; bump \"minor\" or \"major\"")
 
     last_tag = last_release_tag()
     if not last_tag:
@@ -69,7 +59,7 @@ def main() -> None:
     elif bump_type == "patch":
         new_file_version = f"{major}.{minor}.{patch + 1}"
     else:
-        fail(f"Invalid bump_type: {bump_type}")
+        fail(f"\"bump-type\" must be \"next\", \"patch\", \"minor\", or \"major\", not {bump_type}")
     new = new_file_version.rsplit(".", 1)[0] if two_part else new_file_version
 
     if version_key(current_file_version) >= version_key(new_file_version):

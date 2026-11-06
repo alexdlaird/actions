@@ -10,7 +10,6 @@ from tests.testcase import ActionTestCase
 SHA = "abc123"
 
 FAKE_GH = """#!/usr/bin/env python3
-# Answers the gh calls wait-for-ci makes from JSON in FAKE_STATE
 import json, os, sys
 
 state = os.environ["FAKE_STATE"]
@@ -79,10 +78,10 @@ class TestWaitForCi(ActionTestCase):
             return f.read()
 
     def wait_for_ci(self, branch="develop", dispatch_inputs="", push_wait_seconds="0", push_run_after_lookups=0):
-        return self.run_action("wait-for-ci", GH_TOKEN="token", CI_SHA=SHA, CI_BRANCH=branch, REPO_SLUG="owner/repo",
-                               CI_WORKFLOW="build.yml", CI_TIMEOUT_MINUTES="1", CI_POLL_SECONDS="0",
-                               CI_SETTLE_SECONDS="0", CI_PUSH_WAIT_SECONDS=push_wait_seconds,
-                               CI_DISPATCH_INPUTS=dispatch_inputs, PUSH_RUN_AFTER_LOOKUPS=str(push_run_after_lookups),
+        return self.run_action("wait-for-ci", GH_TOKEN="token", SHA=SHA, BRANCH=branch, REPO_SLUG="owner/repo",
+                               WORKFLOW="build.yml", TIMEOUT_MINUTES="1", POLL_SECONDS="0",
+                               SETTLE_SECONDS="0", PUSH_WAIT_SECONDS=push_wait_seconds,
+                               DISPATCH_INPUTS=dispatch_inputs, PUSH_RUN_AFTER_LOOKUPS=str(push_run_after_lookups),
                                FAKE_STATE=self.fake_state)
 
     def test_returns_the_successful_push_run(self):

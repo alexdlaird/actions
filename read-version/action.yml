@@ -3,26 +3,26 @@ description: "Read a repo's version from its version file, using the same sed ex
 
 inputs:
   version-file:
-    description: 'Path to the file containing the version'
+    description: "The path to the file containing the version"
     required: true
   version-pattern:
-    description: 'The sed substitution that writes the version (e.g. s/^__version__ = ".*"/__version__ = "${VERSION}"/); its match part finds the line to read'
+    description: "The sed substitution that writes the version (e.g. s/^__version__ = \".*\"/__version__ = \"${VERSION}\"/); its match part finds the line to read"
     required: true
   version-parts:
-    description: '3 for X.Y.Z; 2 for X.Y, where the file holds X.Y.0'
+    description: "3 for X.Y.Z; 2 for X.Y, where the file holds X.Y.0"
     required: false
     default: '3'
   ref:
-    description: 'Commit to read the file from; empty reads the working tree'
+    description: "The commit to read the file from; empty reads the working tree"
     required: false
     default: ''
 
 outputs:
   version:
-    description: 'The version (X.Y.Z, or X.Y for two-part versions)'
+    description: "The version (X.Y.Z, or X.Y for two-part versions)"
     value: ${{ steps.read.outputs.version }}
   file-version:
-    description: 'The version as written in the file (always X.Y.Z)'
+    description: "The version as written in the file (always X.Y.Z)"
     value: ${{ steps.read.outputs.file_version }}
 
 runs:

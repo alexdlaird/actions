@@ -5,9 +5,10 @@ import datetime
 import os
 import re
 import subprocess
-import sys
 import uuid
-from typing import List, NoReturn, Optional, Tuple
+from typing import List, Optional, Tuple
+
+from shipshape import fail
 
 CHANGELOG_FILE = "CHANGELOG.md"
 UNRELEASED_PATTERN = re.compile(r"^## \[Unreleased\]")
@@ -17,12 +18,7 @@ VERSION_HEADER_PATTERN = re.compile(r"^## \[\d+\.\d+(?:\.\d+)?\]", re.MULTILINE)
 BREAKING_PATTERN = re.compile(r"^### Breaking", re.MULTILINE)
 
 
-def fail(message: str) -> NoReturn:
-    print(f"::error::{message}")
-    sys.exit(1)
-
-
-def write_outputs(release_notes: str, **outputs: str) -> None:
+def write_release_outputs(release_notes: str, **outputs: str) -> None:
     delimiter = f"ghadelimiter_{uuid.uuid4()}"
     with open(os.environ["GITHUB_OUTPUT"], "a") as f:
         for name, value in outputs.items():
@@ -32,7 +28,7 @@ def write_outputs(release_notes: str, **outputs: str) -> None:
 
 def commit_notes(base: str, tested_sha: str) -> str:
     """
-    The released commits' subjects, leaving out version bumps.
+    Get the released commits' subjects as release notes, leaving out version bumps.
     """
     log = subprocess.run(["git", "log", "--pretty=format:- %s", f"{base}..{tested_sha}"], check=True,
                          capture_output=True, text=True).stdout
@@ -47,8 +43,8 @@ def parts(version: str) -> Tuple[int, int, int]:
 
 def bump_type(old_version: Optional[str], new_version: str) -> str:
     """
-    How the new version differs from the CHANGELOG's last release. A first release counts as a minor, so it needs
-    entries.
+    Determine how the new version differs from the CHANGELOG's last release. A first release counts as a minor, so it
+    needs entries.
     """
     if old_version is None:
         return "minor"
@@ -84,7 +80,7 @@ def release_changelog(new_version: str, two_part: bool, repo_slug: str) -> Tuple
 
     unreleased = next((i for i, line in enumerate(lines) if UNRELEASED_PATTERN.match(line)), None)
     if unreleased is None:
-        fail("No '## [Unreleased]' section found in CHANGELOG.md")
+        fail("No \"## [Unreleased]\" section found in CHANGELOG.md")
     previous = next((i for i in range(unreleased + 1, len(lines)) if RELEASE_HEADER_PATTERN.match(lines[i])),
                     len(lines))
     old_version = None
@@ -107,11 +103,11 @@ def release_changelog(new_version: str, two_part: bool, repo_slug: str) -> Tuple
         print("No changelog entries under [Unreleased]; releasing the patch as stability and bug fixes")
         content = "\n### Fixed\n\n- Stability and bug fixes."
     if VERSION_HEADER_PATTERN.search(content):
-        fail("Found a version header under [Unreleased]. Use the new workflow: put entries directly under "
-             "[Unreleased] without a version/date header.")
+        fail("Found a version header under [Unreleased]. Put entries directly under [Unreleased], without a "
+             "version or date header, since the release adds it.")
     if BREAKING_PATTERN.search(content) and release_type != "major":
-        fail(f"Changelog contains a '### Breaking' section, but bump type is '{release_type}'. Use 'major' for "
-             f"breaking changes.")
+        fail(f"Changelog contains a \"### Breaking\" section, but the bump type is \"{release_type}\". Use \"major\" "
+             f"for breaking changes.")
 
     today = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
     print(f"Previous version: {old_version or '(first release)'}")
@@ -135,16 +131,16 @@ def release_changelog(new_version: str, two_part: bool, repo_slug: str) -> Tuple
 
 def main() -> None:
     if os.environ["CHANGELOG"] != "true":
-        write_outputs(commit_notes(os.environ.get("BASE_REF", "main"), os.environ["TESTED_SHA"]))
+        write_release_outputs(commit_notes(os.environ.get("BASE", "main"), os.environ["TESTED_SHA"]))
         return
 
-    new_version = os.environ["NEW_VERSION"]
+    new_version = os.environ["VERSION"]
     repo_slug = os.environ["REPO_SLUG"]
     if not new_version or not repo_slug:
-        fail("A changelog release needs version and repo-slug")
+        fail("A changelog release needs \"version\" and \"repo-slug\"")
 
     old_version, release_notes = release_changelog(new_version, os.environ["VERSION_PARTS"] == "2", repo_slug)
-    write_outputs(release_notes, new_version=new_version, old_version=old_version or "")
+    write_release_outputs(release_notes, new_version=new_version, old_version=old_version or "")
 
 
 if __name__ == "__main__":

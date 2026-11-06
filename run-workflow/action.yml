@@ -3,34 +3,34 @@ description: "Start a workflow_dispatch workflow with inputs and wait for that r
 
 inputs:
   workflow:
-    description: 'The workflow file to run (e.g. deploy.yml)'
+    description: "The workflow file to run (e.g. deploy.yml)"
     required: true
   ref:
-    description: 'The branch or tag to run it on'
+    description: "The branch or tag to run it on"
     required: true
   inputs:
     description: "The workflow's inputs, one name=value per line"
     required: false
     default: ''
   token:
-    description: 'Token that can start workflows (actions: write)'
+    description: "A token that can start workflows (actions: write)"
     required: true
   repo-slug:
-    description: 'owner/repo'
+    description: "The repo, as owner/repo"
     required: false
     default: ${{ github.repository }}
   timeout-minutes:
-    description: 'How long to wait for the run to finish'
+    description: "How long to wait for the run to finish"
     required: false
     default: '120'
   poll-seconds:
-    description: 'How often to check the run'
+    description: "How often to check the run"
     required: false
     default: '30'
 
 outputs:
   run-id:
-    description: 'The run this started'
+    description: "The run this started"
     value: ${{ steps.run.outputs.run_id }}
   run-url:
     description: "The run's page"
@@ -43,6 +43,7 @@ runs:
       id: run
       shell: bash
       env:
+        PYTHONPATH: ${{ github.action_path }}/..
         GH_TOKEN: ${{ inputs.token }}
         WORKFLOW: ${{ inputs.workflow }}
         REF: ${{ inputs.ref }}

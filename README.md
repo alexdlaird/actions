@@ -4,7 +4,7 @@
 [![Build](https://img.shields.io/github/actions/workflow/status/alexdlaird/shipshape/build.yml)](https://github.com/alexdlaird/shipshape/actions/workflows/build.yml)
 [![GitHub License](https://img.shields.io/github/license/alexdlaird/shipshape)](https://github.com/alexdlaird/shipshape/blob/main/LICENSE)
 
-**shipshape** is a library of small, composable GitHub Actions for shipping exactly what you tested. Version lives in
+`shipshape` is a library of small, composable GitHub Actions for shipping exactly what you tested. Version lives in
 your repo, a release goes out only from the commit CI already built and tested, and release notes come straight from
 your changelog, with the same process in every repo you maintain. Use the whole set or just the piece your workflow is
 missing.
@@ -99,8 +99,8 @@ deploy does.
 
 The deploy then finds what to ship with
 [`resolve-release`](https://github.com/alexdlaird/shipshape/blob/main/resolve-release/action.yml): the version (the
-newest tag when blank) and, from its tag, the commit and the `Build-Run` the release recorded. A release hands both
-over directly, since it tags only after deploying.
+newest tag, when none is given) and, from the version's tag, the commit and the `Build-Run` the release recorded. A
+release passes the commit and run in directly instead, since it tags only after deploying.
 
 ```yaml
 - name: Find the release
@@ -183,7 +183,8 @@ onto HTTP/1.1 and retries transient CDN errors.
 ## Documentation
 
 Each action's inputs and outputs are documented in its `action.yml`. For complete workflows built from them, see
-the reusable release workflows in [`alexdlaird/.github`](https://github.com/alexdlaird/.github/tree/main/.github/workflows), and the projects that
+the reusable release workflows in
+[`alexdlaird/.github`](https://github.com/alexdlaird/.github/tree/main/.github/workflows), and the projects that
 release with them, like [`pyngrok`](https://github.com/alexdlaird/pyngrok/blob/main/.github/workflows/release.yml)
 and [Helium](https://github.com/HeliumEdu/frontend/blob/main/.github/workflows/release.yml).
 
@@ -196,11 +197,11 @@ and [Helium](https://github.com/HeliumEdu/frontend/blob/main/.github/workflows/r
 | [`run-workflow`](https://github.com/alexdlaird/shipshape/blob/main/run-workflow/action.yml) | Run a workflow and wait for that run, failing if it fails |
 | [`resolve-release`](https://github.com/alexdlaird/shipshape/blob/main/resolve-release/action.yml) | Resolve a released version, and its commit and `Build-Run` from its tag |
 | [`wait-for-ci`](https://github.com/alexdlaird/shipshape/blob/main/wait-for-ci/action.yml) | Wait for a commit's CI push run, re-running failed jobs once or starting one if missing |
-| [`prepare-release`](https://github.com/alexdlaird/shipshape/blob/main/prepare-release/action.yml) | Release notes, from `CHANGELOG.md` or commit subjects |
+| [`prepare-release`](https://github.com/alexdlaird/shipshape/blob/main/prepare-release/action.yml) | Prepare release notes, from `CHANGELOG.md` or commit subjects |
 | [`security-versions`](https://github.com/alexdlaird/shipshape/blob/main/security-versions/action.yml) | Point `SECURITY.md` at a new minor |
 | [`sentry-release`](https://github.com/alexdlaird/shipshape/blob/main/sentry-release/action.yml) | Create, associate commits with, and finalize a Sentry release |
 | [`ios-deploy-lock`](https://github.com/alexdlaird/shipshape/blob/main/ios-deploy-lock/action.yml) | Take turns deploying iOS apps on a shared Mac |
-| [`pod-install`](https://github.com/alexdlaird/shipshape/blob/main/pod-install/action.yml) | `pod install` that survives CocoaPods' CDN |
+| [`pod-install`](https://github.com/alexdlaird/shipshape/blob/main/pod-install/action.yml) | Run `pod install`, surviving CocoaPods' CDN |
 | [`select-xcode`](https://github.com/alexdlaird/shipshape/blob/main/select-xcode/action.yml) | Select the newest stable Xcode |
 
 ## Contributing
