@@ -27,7 +27,7 @@ class TestIosDeployLock(ActionTestCase):
         return dict(os.environ, MODE=mode, LOCK_PATH=self.lock, STALE_MINUTES="110", POLL_SECONDS="0.2",
                     GITHUB_REPOSITORY="owner/app", GITHUB_RUN_ID=str(run_id), GITHUB_RUN_ATTEMPT="1")
 
-    def given_job_holding_the_lock(self, run_id):
+    def start_job(self, run_id):
         step = os.path.join(self.fake_bin, "step.sh")
         with open(step, "w") as f:
             f.write(f'"{SCRIPT}"\n')
@@ -38,6 +38,10 @@ class TestIosDeployLock(ActionTestCase):
         job = subprocess.Popen(["bash", worker], env=self.env(run_id), stdout=subprocess.DEVNULL,
                                stderr=subprocess.DEVNULL)
         self.jobs.append(job)
+        return job
+
+    def given_job_holding_the_lock(self, run_id):
+        job = self.start_job(run_id)
         owner = os.path.join(self.lock, "owner")
         deadline = time.time() + 10
         while not (os.path.exists(owner) and open(owner).read().strip()):
@@ -103,3 +107,20 @@ class TestIosDeployLock(ActionTestCase):
         # THEN
         self.assert_succeeds(holder)
         self.assertFalse(os.path.exists(self.lock), "released by the job that took it")
+
+    def test_a_waiter_whose_job_is_cancelled_never_takes_the_lock(self):
+        # GIVEN
+        self.given_job_holding_the_lock(1)
+        waiter = self.start_job(2)
+        time.sleep(0.5)
+
+        # WHEN
+        waiter.kill()
+        waiter.wait()
+        release = subprocess.run(["bash", SCRIPT], env=self.env(1, mode="release"), capture_output=True, text=True)
+        self.assert_succeeds(release)
+        time.sleep(1.5)
+
+        # THEN
+        self.assertFalse(os.path.exists(self.lock), "a cancelled job's orphaned step must not take the lock")
+        self.assert_succeeds(self.acquire(3, timeout=5))

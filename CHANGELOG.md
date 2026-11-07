@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased](https://github.com/alexdlaird/shipshape/compare/1.4.1...HEAD)
 
+### Fixed
+
+- `ios-deploy-lock`: a job cancelled while waiting for the lock no longer takes it as an orphan and leaves it held until it goes stale; the lock names the job it was taken for, so a holder that ended is always broken.
+
 ## [1.4.1](https://github.com/alexdlaird/shipshape/compare/1.4.0...1.4.1) - 2026-11-06
 
 ### Fixed

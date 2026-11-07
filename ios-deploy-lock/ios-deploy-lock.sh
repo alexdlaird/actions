@@ -25,10 +25,21 @@ job_process() {
   echo "-"
 }
 
+# Whether this step's job has ended (cancelled) and left it running as an orphan.
+job_ended() {
+  [[ "$JOB" =~ ^[0-9]+$ ]] && ! is_job_process "$JOB"
+}
+
 case "$MODE" in
   acquire)
+    # Found now, while this step still descends from it: a cancelled job orphans the step.
+    JOB=$(job_process)
     # The owner file is "<job process id> <run>"; with no job process known ("-"), only its age breaks it
     until mkdir "$LOCK" 2>/dev/null; do
+      if job_ended; then
+        echo "::error::This job ended while waiting for the iOS deploy lock"
+        exit 1
+      fi
       HELD_BY=$(cat "$LOCK/owner" 2>/dev/null || true)
       HOLDER_PID=${HELD_BY%% *}
       if { [[ "$HOLDER_PID" =~ ^[0-9]+$ ]] && ! is_job_process "$HOLDER_PID"; } \
@@ -43,7 +54,12 @@ case "$MODE" in
       echo "Waiting for ${HELD_BY#* }"
       sleep "${POLL_SECONDS:-15}"
     done
-    echo "$(job_process) $OWNER" > "$LOCK/owner"
+    if job_ended; then
+      rm -rf "$LOCK"
+      echo "::error::This job ended while waiting for the iOS deploy lock"
+      exit 1
+    fi
+    echo "$JOB $OWNER" > "$LOCK/owner"
     ;;
   release)
     if [ "$(cut -d' ' -f2- "$LOCK/owner" 2>/dev/null)" = "$OWNER" ]; then
