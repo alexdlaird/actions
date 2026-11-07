@@ -6,6 +6,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased](https://github.com/alexdlaird/shipshape/compare/1.4.3...HEAD)
 
+### Fixed
+
+- `select-xcode` selects Xcode for the job with `DEVELOPER_DIR` instead of `sudo xcode-select`, so a self-hosted runner's user needs no root and jobs on one Mac never switch it for each other; a Mac with no stable Xcode now reports it instead of exiting silently.
+
 ## [1.4.3](https://github.com/alexdlaird/shipshape/compare/1.4.2...1.4.3) - 2026-11-07
 
 ### Fixed

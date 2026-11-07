@@ -1,5 +1,5 @@
 name: 'Select Xcode'
-description: "Select the newest stable Xcode installed in /Applications (skipping betas and release candidates)."
+description: "Select the newest stable Xcode installed in /Applications (skipping betas and release candidates) for the rest of the job."
 
 runs:
   using: 'composite'
