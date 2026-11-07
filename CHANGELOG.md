@@ -4,7 +4,13 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/alexdlaird/shipshape/compare/1.4.2...HEAD)
+## [Unreleased](https://github.com/alexdlaird/shipshape/compare/1.4.3...HEAD)
+
+## [1.4.3](https://github.com/alexdlaird/shipshape/compare/1.4.2...1.4.3) - 2026-11-07
+
+### Fixed
+
+- Stability and bug fixes.
 
 ## [1.4.2](https://github.com/alexdlaird/shipshape/compare/1.4.1...1.4.2) - 2026-11-07
 
