@@ -5,7 +5,7 @@ __muppets__ = "no strings attached"
 import os
 import subprocess
 import sys
-from typing import Dict, NoReturn
+from typing import Dict, NoReturn, Optional
 
 
 def fail(message: str) -> NoReturn:
@@ -40,6 +40,22 @@ def gh(*args: str, stdin: str = "") -> str:
     result = subprocess.run(["gh", *args], input=stdin, capture_output=True, text=True)
     if result.returncode != 0:
         fail(f"gh {' '.join(args)} failed: {(result.stderr or result.stdout).strip()}")
+    return result.stdout
+
+
+def gh_unless_not_found(*args: str) -> Optional[str]:
+    """
+    Run a ``gh`` command and return its output, or ``None`` when GitHub answers 404 Not Found; fail on any other error.
+
+    :param args: The arguments to pass to ``gh``.
+    :return: The command's output, or ``None`` when GitHub found nothing.
+    """
+    result = subprocess.run(["gh", *args], capture_output=True, text=True)
+    if result.returncode != 0:
+        error = (result.stderr or result.stdout).strip()
+        if "HTTP 404" in error:
+            return None
+        fail(f"gh {' '.join(args)} failed: {error}")
     return result.stdout
 
 

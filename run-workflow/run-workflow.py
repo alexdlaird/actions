@@ -5,7 +5,7 @@ import json
 import os
 import time
 
-from shipshape import fail, gh, parse_inputs, write_outputs
+from shipshape import fail, gh, gh_unless_not_found, parse_inputs, write_outputs
 
 
 def main() -> None:
@@ -28,8 +28,17 @@ def main() -> None:
     write_outputs(run_id=str(run_id), run_url=run_url)
     print(f"Started {workflow}: {run_url}")
 
+    # A run GitHub has just started can answer 404 for a moment before it's served
+    visible_by = time.time() + float(os.environ.get("RUN_VISIBLE_SECONDS", "120"))
     while time.time() < deadline:
-        run = json.loads(gh("api", f"repos/{repo_slug}/actions/runs/{run_id}"))
+        found = gh_unless_not_found("api", f"repos/{repo_slug}/actions/runs/{run_id}")
+        if found is None:
+            if time.time() >= visible_by:
+                fail(f"GitHub started {workflow} run {run_id} but still can't find it: {run_url}")
+            print(f"{workflow} run {run_id} isn't visible yet")
+            time.sleep(min(poll_seconds, 5))
+            continue
+        run = json.loads(found)
         if run["status"] == "completed":
             if run.get("conclusion") == "success":
                 print(f"{workflow} run {run_id} succeeded")

@@ -23,6 +23,16 @@ if "-X" in args and "POST" in args:
         sys.exit(1)
     sys.stdout.write(os.environ.get("DISPATCH_RESPONSE", ""))
 else:
+    reads_path = os.path.join(state, "reads")
+    reads = int(open(reads_path).read()) if os.path.exists(reads_path) else 0
+    with open(reads_path, "w") as f:
+        f.write(str(reads + 1))
+    if reads < int(os.environ.get("NOT_FOUND_READS", "0")):
+        sys.stderr.write("gh: Not Found (HTTP 404)\\n")
+        sys.exit(1)
+    if os.environ.get("READ_ERROR"):
+        sys.stderr.write(os.environ["READ_ERROR"] + "\\n")
+        sys.exit(1)
     with open(os.path.join(state, "run.json")) as f:
         sys.stdout.write(f.read())
 """
@@ -48,11 +58,11 @@ class TestRunWorkflow(ActionTestCase):
         with open(os.path.join(self.fake_state, "calls")) as f:
             return f.read()
 
-    def run_workflow(self, inputs=""):
+    def run_workflow(self, inputs="", **env):
         return self.run_action("run-workflow", GH_TOKEN="token", WORKFLOW="deploy.yml", REF="develop", INPUTS=inputs,
                                REPO_SLUG="owner/repo", TIMEOUT_MINUTES="1", POLL_SECONDS="0",
                                FAKE_STATE=self.fake_state, DISPATCH_RESPONSE=self.dispatch_response,
-                               DISPATCH_ERROR=self.dispatch_error)
+                               DISPATCH_ERROR=self.dispatch_error, **env)
 
     def test_waits_for_the_run_it_started(self):
         # GIVEN
@@ -123,3 +133,38 @@ class TestRunWorkflow(ActionTestCase):
 
         # THEN
         self.assert_fails(result)
+
+    def test_waits_for_a_run_github_does_not_serve_yet(self):
+        # GIVEN
+        self.given_github({"status": "completed", "conclusion": "success"})
+
+        # WHEN
+        result = self.run_workflow(NOT_FOUND_READS="3")
+
+        # THEN
+        self.assert_succeeds(result)
+        self.assertEqual(3, result.stdout.count("deploy.yml run 42 isn't visible yet"))
+        self.assertIn("deploy.yml run 42 succeeded", result.stdout)
+
+    def test_fails_when_the_run_never_becomes_visible(self):
+        # GIVEN
+        self.given_github({"status": "completed", "conclusion": "success"})
+
+        # WHEN
+        result = self.run_workflow(NOT_FOUND_READS="100000", RUN_VISIBLE_SECONDS="0.5")
+
+        # THEN
+        self.assert_fails(result)
+        self.assertIn("GitHub started deploy.yml run 42 but still can't find it", result.stdout)
+
+    def test_other_errors_reading_the_run_fail_at_once(self):
+        # GIVEN
+        self.given_github({"status": "completed", "conclusion": "success"})
+
+        # WHEN
+        result = self.run_workflow(READ_ERROR="gh: Server Error (HTTP 502)")
+
+        # THEN
+        self.assert_fails(result)
+        self.assertIn("HTTP 502", result.stdout)
+        self.assertNotIn("isn't visible yet", result.stdout)
